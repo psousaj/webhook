@@ -28,6 +28,7 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 APPEND_SLASH = False
+CELERY_BROKER_URL = 'amqps://ifauiewm:gCoxtoOaOB5bMvPVeBmD6njA6sr8AdIp@gull.rmq.cloudamqp.com/ifauiewm'
 
 # Application definition
 
@@ -42,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'example',
     'messages_api',
+    'celery',
 ]
 
 MIDDLEWARE = [
