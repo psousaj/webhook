@@ -1,1 +1,1 @@
-web: gunicorn 'webhook.wsgi'
+web: gunicorn webhook.wsgi
