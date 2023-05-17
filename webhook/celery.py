@@ -12,8 +12,8 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
 # Configurando a URL do broker
-# app.conf.broker_url = os.environ.get('BROKER')
-# broker_url = os.environ.get('FLOWER_BROKER')
+app.conf.broker_url = ''
+broker_url = os.getenv('CLOUDAMQP_URL')
 broker_pool_limit = 1  # Will decrease connection usage
 broker_heartbeat = None  # We're using TCP keep-alive instead
 # May require a long timeout due to Linux DNS timeouts etc
