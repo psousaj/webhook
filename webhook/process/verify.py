@@ -1,4 +1,5 @@
-# from webhook.request import get_digisac_api as request
+# from webhook.request import get_digisac_api as digisac_api
+
 
 # def receiver_handler(data):
 #     id_messager = data['data']['id']
@@ -13,12 +14,13 @@
 #             pass
 
 
-# def handle_message_updated(data, event, id_messager):
-#     protocol = request('/tickets/')
-#     messe_data = search_message.search(id_messager)
-#     if messe_data:
+# def handle_message_updated(data, message_id):
+#     ticket_id = data['data']['ticketId']
+#     protocol = digisac_api(f'/tickets/{ticket_id}')
+#     message_data = search_message.search(message_id)
+#     if message_data:
 #         status = data['data']['data']['ack']
-#         confirm_mensager.confirm(messe_data, status)
+#         confirm_mensager.confirm(message_data, status)
 
 
 # def handle_message_created(data, event):

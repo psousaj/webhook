@@ -12,6 +12,7 @@ logger = Logger(__name__)
 def webhook_receiver(request: HttpRequest):
     data = json.loads(request.body) if request.body else {}
     logger.info(f"Received webhook request")
+    logger.info(data)
     # verify_messager.verify(data)
     return Response(
         {
