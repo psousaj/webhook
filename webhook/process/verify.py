@@ -7,9 +7,9 @@
 
 #     if 'type' in data['data'] and data['data']['type'] != 'ticket':
 #         if event == 'message.updated':
-#             handle_message_updated(data, event, id_messager)
+#             handle_message_updated(data, id_messager)
 #         elif event == 'message.created':
-#             handle_message_created(data, event)
+#             handle_message_created(data)
 #         else:
 #             pass
 
