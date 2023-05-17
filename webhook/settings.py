@@ -81,22 +81,14 @@ WSGI_APPLICATION = 'webhook.wsgi.app'
 # environments like Vercel. You can use a database over HTTP, hosted elsewhere.
 
 DATABASES = {
+    # To use Neon with Django, you have to create a Project on Neon and specify the project connection settings in your settings.py in the same way as for standalone Postgres.
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    },
-    'mysql': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'woz',
-        'USER': 'root',
-        'PASSWORD': 'dev@311',
-        'HOST': '192.168.1.54',
-        'PORT': '3306',
-        'OPTIONS': {
-            'init_command': 'SET default_storage_engine=INNODB',
-            'charset': 'utf8mb4'
-        },
-        'ATOMIC_REQUESTS': True
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'neondb',
+        'USER': 'psousaj',
+        'PASSWORD': 'EOyse2vRG5Ff',
+        'HOST': 'ep-young-feather-699075.us-east-1.aws.neon.tech',
+        'PORT': '5432',
     }
 }
 
