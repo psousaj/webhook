@@ -17,10 +17,12 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from webhook.views import webhook_receiver
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('example.urls')),
+    path('webhook', webhook_receiver, name='webhook'),
     path('webhook/', include('messages_api.urls')),
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
