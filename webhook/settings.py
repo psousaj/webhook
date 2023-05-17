@@ -72,7 +72,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'webhook.wsgi.app'
+WSGI_APPLICATION = 'webhook.wsgi.application'
 
 
 # Database
