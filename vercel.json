@@ -9,7 +9,7 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "django_project/wsgi.py"
+      "dest": "webhook/wsgi.py"
     }
   ]
 }
