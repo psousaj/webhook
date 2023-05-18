@@ -1,3 +1,0 @@
-18/05/2023|13:57:40 - __main__ -INFO- Dyno: web.1 state = up
-18/05/2023|13:59:05 - __main__ -INFO- Dyno: web.1 state = up
-18/05/2023|13:59:36 - __main__ -INFO- Web dyno is working correctly.

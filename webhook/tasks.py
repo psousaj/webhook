@@ -11,13 +11,13 @@ from webhook.logger import Logger
 
 load_dotenv()
 logger = Logger(__name__)
-
-HEROKU_API_KEY = os.getenv('HEROKU_API_KEY')
+os.environ.get('', )
+HEROKU_API_KEY = os.environ.get('HEROKU_API_KEY', os.getenv('HEROKU_API_KEY'))
 HEROKU_APP_NAME = 'woz'
-HEROKU_API = os.getenv('HEROKU_API')
+HEROKU_API = os.environ.get('HEROKU_API', os.getenv('HEROKU_API'))
 CHECK_INTERVAL_SECONDS = 30
 DYNO_NAME = 'web.1'  # or whatever your web dyno is called
-DYNO_URL = os.getenv('WEB_URL')
+DYNO_URL = os.environ.get('WEB_URL', os.getenv('WEB_URL'))
 
 
 @shared_task(name='check_dyno_state')
@@ -50,14 +50,11 @@ def check_dyno_state():
                         else:
                             logger.info(
                                 f'Dyno: {DYNO_NAME} state = {response_json["state"]}')
-                            print(
-                                f'Dyno: {DYNO_NAME} state = {response_json["state"]}')
                     except Exception as e:
                         logger.info(f'Restarting Dyno: {DYNO_NAME}')
                         response_restart = client.delete(url)
                 else:
                     logger.info(f'Web dyno is working correctly.')
-                    print(f'Web dyno is working correctly.')
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 filename = inspect.getframeinfo(exc_tb.tb_frame).filename
