@@ -50,6 +50,3 @@ def init_check_state():
             logger.debug(f'erro: {e}')
 
         time.sleep(CHECK_INTERVAL_SECONDS)
-
-
-init_check_state.delay()

@@ -1,7 +1,0 @@
-17/05/2023|23:12:03 - messages_api -DEBUG- erro: 'state'
-17/05/2023|23:13:26 - messages_api -DEBUG- erro: 'state'
-17/05/2023|23:14:35 - messages_api -INFO- Web dyno is working correctly.
-17/05/2023|23:15:05 - messages_api -DEBUG- erro: 'state'
-17/05/2023|23:16:27 - messages_api -DEBUG- erro: 'state'
-17/05/2023|23:17:36 - messages_api -DEBUG- erro: 'state'
-17/05/2023|23:18:06 - messages_api -DEBUG- erro: 'state'
