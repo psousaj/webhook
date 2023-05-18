@@ -1,11 +1,12 @@
-from rest_framework.routers import SimpleRouter
-from messages_api.views import MessageViewSet
-
 from django.urls import include, path
+from webhook.routers.custom import CustomDefaultRouter
+from messages_api.views import MessageViewSet, update_message
 
-router = SimpleRouter()
-router.urls.append(path('', MessageViewSet.as_view(), name='today'))
+router = CustomDefaultRouter()
+router.register(r'', MessageViewSet, basename="messages")
 
 urlpatterns = [
-    path('message', include(router.urls))
+    path('', include(router.urls)),
+    path('/create', MessageViewSet.as_view({'post': 'create'})),
+    path('/update', update_message, name='update_message'),
 ]

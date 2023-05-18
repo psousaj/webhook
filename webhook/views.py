@@ -11,8 +11,9 @@ logger = Logger(__name__)
 @api_view(['POST'])
 def webhook_receiver(request: HttpRequest):
     data = json.loads(request.body) if request.body else {}
-    logger.info(f"Received webhook request")
-    logger.info(data)
+    logger.info(f"Received webhook request\n{data}")
+    with open(f'messages/{data["data"]["type"]}/message{data["timestamp"]}.json', 'w') as f:
+        json.dump(data, f)
     # verify_messager.verify(data)
     return Response(
         {

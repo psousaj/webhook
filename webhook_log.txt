@@ -1,0 +1,37 @@
+18/05/2023|17:00:39 - webhook.views -INFO- Received webhook request
+18/05/2023|17:00:39 - webhook.views -INFO- {'base_url': 'http://localhost:8000', 'webhook': 'http://localhost:8000/webhook'}
+18/05/2023|17:05:34 - webhook.views -INFO- Received webhook request
+18/05/2023|17:05:34 - webhook.views -INFO- Received webhook request
+18/05/2023|17:05:34 - webhook.views -INFO- {'event': 'message.created', 'data': {'id': 'ad28d045-aa3d-4834-b1ea-1f0cd28307f3', 'isFromMe': True, 'sent': True, 'type': 'chat', 'timestamp': '2023-05-18T17:05:33.000Z', 'data': {'ack': 0, 'isNew': True, 'isFirst': False}, 'visible': True, 'accountId': '966b70ba-27d8-43ae-a295-35e59f0007be', 'contactId': '79db7607-6088-44c1-a010-ed4ef39d4f37', 'fromId': 'e12d3a56-0c52-43ac-b33c-15c399eb06d4', 'serviceId': '83108c28-14f7-4646-acb8-dab165397fd5', 'toId': None, 'userId': '3f4cc332-516e-4f48-aff2-df6eaa2e5034', 'ticketId': '7da41b49-6b93-4c06-a4df-67de634fb189', 'ticketUserId': None, 'ticketDepartmentId': None, 'quotedMessageId': None, 'origin': 'user', 'hsmId': None, 'text': '1', 'obfuscated': False, 'files': None, 'quotedMessage': None, 'isFromBot': False}, 'webhookId': '27b4c18d-2ab0-4c70-a592-46bbe7e00bc8', 'timestamp': '2023-05-18T17:05:33.280Z'}
+18/05/2023|17:05:34 - webhook.views -INFO- {'event': 'message.updated', 'data': {'id': 'ad28d045-aa3d-4834-b1ea-1f0cd28307f3', 'isFromMe': True, 'sent': True, 'type': 'chat', 'timestamp': '2023-05-18T17:05:33.000Z', 'data': {'ack': 1, 'isNew': True, 'isFirst': False}, 'visible': True, 'accountId': '966b70ba-27d8-43ae-a295-35e59f0007be', 'contactId': '79db7607-6088-44c1-a010-ed4ef39d4f37', 'fromId': 'e12d3a56-0c52-43ac-b33c-15c399eb06d4', 'serviceId': '83108c28-14f7-4646-acb8-dab165397fd5', 'toId': None, 'userId': '3f4cc332-516e-4f48-aff2-df6eaa2e5034', 'ticketId': '7da41b49-6b93-4c06-a4df-67de634fb189', 'ticketUserId': '3f4cc332-516e-4f48-aff2-df6eaa2e5034', 'ticketDepartmentId': 'a78046d7-809d-4cdb-a72a-31dfbc47d862', 'quotedMessageId': None, 'origin': 'user', 'hsmId': None, 'text': '1', 'obfuscated': False, 'files': None, 'quotedMessage': None, 'isFromBot': False}, 'webhookId': '27b4c18d-2ab0-4c70-a592-46bbe7e00bc8', 'timestamp': '2023-05-18T17:05:33.377Z'}
+18/05/2023|17:05:34 - webhook.views -INFO- Received webhook request
+18/05/2023|17:05:34 - webhook.views -INFO- {'event': 'message.updated', 'data': {'id': 'ad28d045-aa3d-4834-b1ea-1f0cd28307f3', 'isFromMe': True, 'sent': True, 'type': 'chat', 'timestamp': '2023-05-18T17:05:33.000Z', 'data': {'ack': 2, 'isNew': True, 'isFirst': False}, 'visible': True, 'accountId': '966b70ba-27d8-43ae-a295-35e59f0007be', 'contactId': '79db7607-6088-44c1-a010-ed4ef39d4f37', 'fromId': 'e12d3a56-0c52-43ac-b33c-15c399eb06d4', 'serviceId': '83108c28-14f7-4646-acb8-dab165397fd5', 'toId': None, 'userId': '3f4cc332-516e-4f48-aff2-df6eaa2e5034', 'ticketId': '7da41b49-6b93-4c06-a4df-67de634fb189', 'ticketUserId': '3f4cc332-516e-4f48-aff2-df6eaa2e5034', 'ticketDepartmentId': 'a78046d7-809d-4cdb-a72a-31dfbc47d862', 'quotedMessageId': None, 'origin': 'user', 'hsmId': None, 'text': '1', 'obfuscated': False, 'files': None, 'quotedMessage': None, 'isFromBot': False}, 'webhookId': '27b4c18d-2ab0-4c70-a592-46bbe7e00bc8', 'timestamp': '2023-05-18T17:05:33.588Z'}
+18/05/2023|17:06:26 - webhook.views -INFO- Received webhook request
+18/05/2023|17:06:26 - webhook.views -INFO- {'event': 'message.updated', 'data': {'id': 'ad28d045-aa3d-4834-b1ea-1f0cd28307f3', 'isFromMe': True, 'sent': True, 'type': 'chat', 'timestamp': '2023-05-18T17:05:33.000Z', 'data': {'ack': 3, 'isNew': True, 'isFirst': False}, 'visible': True, 'accountId': '966b70ba-27d8-43ae-a295-35e59f0007be', 'contactId': '79db7607-6088-44c1-a010-ed4ef39d4f37', 'fromId': 'e12d3a56-0c52-43ac-b33c-15c399eb06d4', 'serviceId': '83108c28-14f7-4646-acb8-dab165397fd5', 'toId': None, 'userId': '3f4cc332-516e-4f48-aff2-df6eaa2e5034', 'ticketId': '7da41b49-6b93-4c06-a4df-67de634fb189', 'ticketUserId': '3f4cc332-516e-4f48-aff2-df6eaa2e5034', 'ticketDepartmentId': 'a78046d7-809d-4cdb-a72a-31dfbc47d862', 'quotedMessageId': None, 'origin': 'user', 'hsmId': None, 'text': '1', 'obfuscated': False, 'files': None, 'quotedMessage': None, 'isFromBot': False}, 'webhookId': '27b4c18d-2ab0-4c70-a592-46bbe7e00bc8', 'timestamp': '2023-05-18T17:06:25.871Z'}
+18/05/2023|17:09:32 - webhook.views -INFO- Received webhook request
+18/05/2023|17:11:07 - webhook.views -INFO- Received webhook request
+18/05/2023|17:12:06 - webhook.views -INFO- Received webhook request
+18/05/2023|17:12:06 - webhook.views -INFO- Received webhook request
+18/05/2023|17:12:06 - webhook.views -INFO- Received webhook request
+18/05/2023|17:14:51 - webhook.views -INFO- Received webhook request
+18/05/2023|17:15:25 - webhook.views -INFO- Received webhook request
+18/05/2023|17:15:25 - webhook.views -INFO- Received webhook request
+18/05/2023|17:15:25 - webhook.views -INFO- Received webhook request
+18/05/2023|17:18:26 - webhook.views -INFO- Received webhook request
+18/05/2023|17:18:26 - webhook.views -INFO- Received webhook request
+18/05/2023|17:18:26 - webhook.views -INFO- Received webhook request
+18/05/2023|17:19:07 - webhook.views -INFO- Received webhook request
+18/05/2023|17:19:07 - webhook.views -INFO- Received webhook request
+18/05/2023|17:25:03 - webhook.views -INFO- Received webhook request
+18/05/2023|17:25:03 - webhook.views -INFO- Received webhook request
+18/05/2023|17:26:06 - webhook.views -INFO- Received webhook request
+18/05/2023|17:26:06 - webhook.views -INFO- Received webhook request
+18/05/2023|17:26:06 - webhook.views -INFO- Received webhook request
+18/05/2023|17:26:06 - webhook.views -INFO- Received webhook request
+18/05/2023|17:26:06 - webhook.views -INFO- Received webhook request
+18/05/2023|17:28:32 - webhook.views -INFO- Received webhook request
+18/05/2023|17:29:33 - webhook.views -INFO- Received webhook request
+18/05/2023|17:31:40 - webhook.views -INFO- Received webhook request
+18/05/2023|17:31:40 - webhook.views -INFO- Received webhook request
+18/05/2023|15:44:47 - webhook.request -ERROR- Exception occurred: 
+Client.get() got an unexpected keyword argument 'json'

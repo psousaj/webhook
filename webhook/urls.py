@@ -23,6 +23,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('example.urls')),
     path('webhook', webhook_receiver, name='webhook'),
-    path('webhook/', include('messages_api.urls')),
+    path('webhook/messages', include('messages_api.urls')),
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

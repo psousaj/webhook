@@ -1,0 +1,35 @@
+{
+  "event": "message.updated",
+  "data": {
+    "id": "1dbca39b-8c18-45b5-a263-a59e31c92273",
+    "isFromMe": true,
+    "sent": true,
+    "type": "chat",
+    "timestamp": "2023-05-18T17:26:05.000Z",
+    "data": {
+      "ack": 3,
+      "isNew": true,
+      "isFirst": false
+    },
+    "visible": true,
+    "accountId": "966b70ba-27d8-43ae-a295-35e59f0007be",
+    "contactId": "79db7607-6088-44c1-a010-ed4ef39d4f37",
+    "fromId": "e12d3a56-0c52-43ac-b33c-15c399eb06d4",
+    "serviceId": "83108c28-14f7-4646-acb8-dab165397fd5",
+    "toId": null,
+    "userId": "3f4cc332-516e-4f48-aff2-df6eaa2e5034",
+    "ticketId": "a402bbf9-5251-4f8e-ae7e-ececde5e313e",
+    "ticketUserId": null,
+    "ticketDepartmentId": "a78046d7-809d-4cdb-a72a-31dfbc47d862",
+    "quotedMessageId": null,
+    "origin": "user",
+    "hsmId": null,
+    "text": "Ol\u00e1, esse e o inicio do teste",
+    "obfuscated": false,
+    "files": null,
+    "quotedMessage": null,
+    "isFromBot": false
+  },
+  "webhookId": "27b4c18d-2ab0-4c70-a592-46bbe7e00bc8",
+  "timestamp": "2023-05-18T17:28:31.528Z"
+}

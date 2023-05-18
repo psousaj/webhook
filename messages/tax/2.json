@@ -1,0 +1,22 @@
+{
+  "event": "ticket.updated",
+  "data": {
+    "id": "a402bbf9-5251-4f8e-ae7e-ececde5e313e",
+    "metrics": {},
+    "isOpen": true,
+    "startedAt": "2023-05-18T17:26:05.376Z",
+    "departmentId": "a78046d7-809d-4cdb-a72a-31dfbc47d862",
+    "userId": null,
+    "protocol": "2023051830785",
+    "origin": "automatic",
+    "contactId": "79db7607-6088-44c1-a010-ed4ef39d4f37",
+    "accountId": "966b70ba-27d8-43ae-a295-35e59f0007be",
+    "firstMessageId": "1dbca39b-8c18-45b5-a263-a59e31c92273",
+    "lastMessageId": "1dbca39b-8c18-45b5-a263-a59e31c92273",
+    "comments": null,
+    "endedAt": null,
+    "currentTicketTransferId": "89611218-6ae0-42a8-a411-b927976c577e"
+  },
+  "webhookId": "27b4c18d-2ab0-4c70-a592-46bbe7e00bc8",
+  "timestamp": "2023-05-18T17:26:05.481Z"
+}
