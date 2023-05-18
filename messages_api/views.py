@@ -12,5 +12,4 @@ from messages_api import init_check_state
 
 class MessageViewSet(APIView):
     def get(self, request):
-        init_check_state.delay()
         return HttpResponse(f'Bom dia! {dt.today()}')
