@@ -12,6 +12,9 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,8 +31,10 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 APPEND_SLASH = False
-CELERY_BROKER_URL = 'amqps://ifauiewm:gCoxtoOaOB5bMvPVeBmD6njA6sr8AdIp@gull.rmq.cloudamqp.com/ifauiewm'
-
+CELERY_BROKER_URL = os.environ.get(
+    'CLOUDAMQP_URL_', os.getenv('CLOUDAMQP_URL'))
+BROKER_URL = os.environ.get(
+    'CLOUDAMQP_URL_', os.getenv('CLOUDAMQP_URL'))
 # Application definition
 
 INSTALLED_APPS = [
