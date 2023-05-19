@@ -108,19 +108,24 @@ class MessageViewSet(viewsets.ModelViewSet):
         return queryset
 
     def create(self, request, *args, **kwargs):
-        contact_number = request.query_params.get('number')
+        contact_number = request.query_params.get('contact')
         period = request.query_params.get('period')
-        contact_id = request.body.get('contact_id')
-        status = request.body.get('status')
-        message_id = request.body.get('message_id')
-        ticket_id = request.body.get('ticket_id')
-        message_type = request.body.get('type')
-        retries = 0
+        contact_id = request.data.get('contact_id')
+        status = request.data.get('status')
+        message_id = request.data.get('message_id')
+        ticket_id = request.data.get('ticket_id')
+        message_type = request.data.get('type')
 
         if not contact_number:
             return Response({'error': 'You must provide a phone_number query parameters.'}, status=400)
         if not period:
             return Response({'error': 'You must provide period query parameters.'}, status=400)
+        if not contact_id or not status or not message_id or not ticket_id or not message_type:
+            return Response(
+                {
+                    'error': 'You must provide all body fields.',
+                    'fields': ["contact_id", "status", "message_id", "ticket_id", "message_type"]
+                }, status=400)
 
         try:
             if len(period) == 5:
@@ -134,7 +139,15 @@ class MessageViewSet(viewsets.ModelViewSet):
                 '%Y-') + period[-2:] + '-' + period[:2] + ' 00:00:00'
         try:
             message = Message.objects.create(
-                contact_number=contact_number, period=period)
+                contact_id=contact_id,
+                contact_number=contact_number,
+                period=period,
+                status=status,
+                message_id=message_id,
+                ticket_service_id=ticket_id,
+                message_type=message_type,
+                retries=0
+            )
         except (IntegrityError, TypeError) as e:
             error_code, error_msg = e.args
             text = str(error_msg)
