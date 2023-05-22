@@ -12,7 +12,7 @@ app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
 # Configurando a URL do broker
 app.conf.broker_url = os.environ.get(
-    'CLOUDAMQP_URL_', os.getenv('CLOUDAMQP_URL'))
+    'CLOUDAMQP_URL', os.getenv('CLOUDAMQP_URL'))
 # broker_url = os.getenv('CLOUDAMQP_URL_ADDON')
 broker_pool_limit = 1  # Will decrease connection usage
 broker_heartbeat = None  # We're using TCP keep-alive instead

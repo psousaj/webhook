@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'example',
     'messages_api',
     'celery',
+    'django_filters',
 ]
 
 MIDDLEWARE = [

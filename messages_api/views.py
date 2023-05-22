@@ -22,109 +22,122 @@ class MessageViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = Message.objects.all()
+        message_id = self.request.query_params.get('id')
         period = self.request.query_params.get('period')
-        cnpj = self.request.query_params.get('cnpj')
-        month = self.request.query_params.get('month')
+        status = self.request.query_params.get('status')
 
-        if period:
-            try:
-                if len(period) == 5:
-                    period = '20' + period[-2:] + '-' + period[:2] + '-01'
-                    dt.strptime(period, '%Y-%m-%d')
-            except ValueError:
-                raise NotFoundException(
-                    'Invalid period format, should be YYYY-MM-DD or MM-YY.')
-            except ValidationError:
-                raise NotFoundException(
-                    'Invalid date format! try to switch "-" to "/"')
+        if message_id:
+            queryset.filter(message_id=message_id)
+        if status:
+            queryset.filter(status=status)
+        # if period:
+        #     try:
+        #         if len(period) == 5:
+        #             period = '20' + period[-2:] + '-' + period[:2] + '-01'
+        #             dt.strptime(period, '%Y-%m-%d')
+        #     except ValueError:
+        #         raise NotFoundException(
+        #             'Invalid period format, should be YYYY-MM-DD or MM-YY.')
+        #     except ValidationError:
+        #         raise NotFoundException(
+        #             'Invalid date format! try to switch "-" to "/"')
 
-            if len(period) == 5:
-                period = dt.now().strftime(
-                    '%Y-') + period[-2:] + '-' + period[:2] + ' 00:00:00'
+        #     if len(period) == 5:
+        #         period = dt.now().strftime(
+        #             '%Y-') + period[-2:] + '-' + period[:2] + ' 00:00:00'
 
-            try:
-                # parsed_period = datetime.strptime(period, '%Y-%m-%d').date()
-                if queryset.filter(period=period).exists():
-                    queryset = queryset.filter(period=period)
-                else:
-                    raise NotFoundException(
-                        "No obligation found for this period.")
-            except ValueError:
-                raise NotFoundException(
-                    "Invalid period format, should be YYYY-MM-DD or MM-YY BLÉ")
+        #     try:
+        #         # parsed_period = datetime.strptime(period, '%Y-%m-%d').date()
+        #         if queryset.filter(period=period).exists():
+        #             queryset = queryset.filter(period=period)
+        #         else:
+        #             raise NotFoundException(
+        #                 "No obligation found for this period.")
+        #     except ValueError:
+        #         raise NotFoundException(
+        #             "Invalid period format, should be YYYY-MM-DD or MM-YY BLÉ")
 
-        elif month and not cnpj:
-            try:
-                month_int = int(month)
-                if not queryset.filter(period__month=month_int).exists():
-                    raise NotFoundException("None Message for this month")
-                elif month_int > 0 and month_int <= 12 and queryset.filter(period__month=month_int).exists():
-                    queryset = queryset.filter(period__month=month_int)
-            except ValueError:
-                raise NotFoundException(
-                    "Invalid month, should be an integer between 1 and 12")
+        # if status and not message_id:
+        #     try:
+        #         month_int = int(status)
+        #         if not queryset.filter(period__month=month_int).exists():
+        #             raise NotFoundException("None Message for this month")
+        #         elif month_int > 0 and month_int <= 12 and queryset.filter(period__month=month_int).exists():
+        #             queryset = queryset.filter(period__month=month_int)
+        #     except ValueError:
+        #         raise NotFoundException(
+        #             "Invalid month, should be an integer between 1 and 12")
 
-        elif cnpj and not month and not period:
-            if queryset.filter(cnpj_base=cnpj).exists():
-                queryset = queryset.filter(cnpj_base=cnpj)
-            else:
-                raise NotFoundException("None obligation for this cnpj")
+        # elif message_id and not status and not period:
+        #     if queryset.filter(cnpj_base=message_id).exists():
+        #         queryset = queryset.filter(cnpj_base=message_id)
+        #     else:
+        #         raise NotFoundException("None obligation for this cnpj")
 
-        if cnpj and period:
-            try:
-                parsed_period = dt.strptime(period, '%Y-%m-%d').date()
-                if queryset.filter(period=parsed_period, cnpj_base=cnpj).exists():
-                    queryset = queryset.filter(
-                        period=parsed_period, cnpj_base=cnpj)
-                else:
-                    raise NotFoundException(
-                        "None obligation found for the specified parameters.")
-            except ValueError:
-                raise NotFoundException(
-                    "Invalid period format, should be YYYY-MM-DD.")
+        # elif message_id and period:
+        #     try:
+        #         parsed_period = dt.strptime(period, '%Y-%m-%d').date()
+        #         if queryset.filter(period=parsed_period, cnpj_base=message_id).exists():
+        #             queryset = queryset.filter(
+        #                 period=parsed_period, cnpj_base=message_id)
+        #         else:
+        #             raise NotFoundException(
+        #                 "None obligation found for the specified parameters.")
+        #     except ValueError:
+        #         raise NotFoundException(
+        #             "Invalid period format, should be YYYY-MM-DD.")
 
-        if cnpj and month:
-            try:
-                try:
-                    month_int = int(month)
-                    if not queryset.filter(period__month=month_int).exists():
-                        raise NotFoundException(
-                            "None Message for this month")
-                    elif not queryset.filter(cnpj_base=cnpj).exists():
-                        raise NotFoundException("CNPJ does not exists")
-                    elif not queryset.filter(period__month=month_int, cnpj_base=cnpj).exists():
-                        raise NotFoundException(
-                            "None Message in this month for the specified cnpj")
-                except ValueError:
-                    raise NotFoundException(
-                        "Invalid month, should be an integer between 1 and 12")
+        # elif message_id and status:
+        #     try:
+        #         try:
+        #             month_int = int(status)
+        #             if not queryset.filter(period__month=month_int).exists():
+        #                 raise NotFoundException(
+        #                     "None Message for this month")
+        #             elif not queryset.filter(cnpj_base=message_id).exists():
+        #                 raise NotFoundException("CNPJ does not exists")
+        #             elif not queryset.filter(period__month=month_int, cnpj_base=message_id).exists():
+        #                 raise NotFoundException(
+        #                     "None Message in this month for the specified cnpj")
+        #         except ValueError:
+        #             raise NotFoundException(
+        #                 "Invalid month, should be an integer between 1 and 12")
 
-                if queryset.filter(period__month=month_int, cnpj_base=cnpj).exists():
-                    queryset = queryset.filter(
-                        period__month=month_int, cnpj_base=cnpj)
-            except ValueError:
-                raise NotFoundException("Internal Error")
+        #         if queryset.filter(period__month=month_int, cnpj_base=message_id).exists():
+        #             queryset = queryset.filter(
+        #                 period__month=month_int, cnpj_base=message_id)
+        #     except ValueError:
+        #         raise NotFoundException("Internal Error")
 
         return queryset
 
     def create(self, request, *args, **kwargs):
-        contact_number = request.query_params.get('contact')
+        contact_number = request.query_params.get('phone')
         period = request.query_params.get('period')
+        timestamp = request.data.get('timestamp')
         contact_id = request.data.get('contact_id')
         status = request.data.get('status')
         message_id = request.data.get('message_id')
         ticket_id = request.data.get('ticket_id')
-        message_type = request.data.get('type')
+        message_type = request.data.get('message_type')
+        isFromMe = request.data.get('is_from_me')
+        text = request.data.get('text')
 
         if not contact_number:
             return Response({'error': 'You must provide a phone_number query parameters.'}, status=400)
         if not period:
             return Response({'error': 'You must provide period query parameters.'}, status=400)
-        if not contact_id or not status or not message_id or not ticket_id or not message_type:
+        if not contact_id or status is None or not message_id or not ticket_id or not message_type:
             return Response(
                 {
                     'error': 'You must provide all body fields.',
-                    'fields': ["contact_id", "status", "message_id", "ticket_id", "message_type"]
+                    'fields': [
+                        "contact_id" if not contact_id else "",
+                        "status" if not status else "",
+                        "message_id" if not message_id else "",
+                        "ticket_id" if not ticket_id else "",
+                        "message_type" if not message_type else ""
+                    ]
                 }, status=400)
 
         try:
@@ -142,10 +155,13 @@ class MessageViewSet(viewsets.ModelViewSet):
                 contact_id=contact_id,
                 contact_number=contact_number,
                 period=period,
+                timestamp=timestamp,
                 status=status,
                 message_id=message_id,
                 ticket_service_id=ticket_id,
                 message_type=message_type,
+                is_from_me=isFromMe,
+                text=text,
                 retries=0
             )
         except (IntegrityError, TypeError) as e:
@@ -160,7 +176,8 @@ class MessageViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         try:
-            queryset = self.filter_queryset(self.get_queryset())
+            queryset = self.filter_queryset(
+                self.get_queryset())  # self.get_queryset()
             serializer = self.get_serializer(queryset, many=True)
 
             if not queryset:
@@ -170,64 +187,32 @@ class MessageViewSet(viewsets.ModelViewSet):
         except NotFoundException as e:
             return Response({'error': str(e)}, status=404)
 
-    def up_obligation(self, request, cnpj_base, period):
-        try:
-            if len(period) == 5:
-                period = '20' + period[-2:] + '-' + period[:2] + '-01'
-            dt.strptime(period, '%Y-%m-%d')
-        except ValueError:
-            return Response({'error': 'Invalid period format, should be YYYY-MM-DD or MM-YY.'}, status=400)
+    def up_message(self, request, **kwargs):
+        message = Message.objects.get(message_id=kwargs['message_id'])
+        if message:
+            serializer = MessageSerializer(message)
+            serializer = MessageSerializer(
+                message, data={'status': kwargs['status']}, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=200)
 
-        if len(period) == 5:
-            period = dt.now().strftime(
-                '%Y-') + period[-2:] + '-' + period[:2] + ' 00:00:00'
+            return Response({"erro": serializer.errors}, status=400)
 
-        try:
-            message = Message.objects.get(
-                cnpj_base=cnpj_base, period=period)
-        except Message.DoesNotExist:
-            raise Exception({'error': 'Message not found.'})
-
-        # Verifica se os campos passados na requisição existem na Model
-        serializer = MessageSerializer(message)
-        fields = serializer.get_fields()
-        # for field in request.data.keys():
-        #     if field not in fields:
-        #         raise Exception({'error': f'Invalid field: {field}', 'fields_available': [
-        #             'download_json_das', 'downloads_das', 'verify_das_mei_data', 'sent_das_file']})
-
-        for field in request.data.keys():
-            if field not in fields:
-                return Response({'error': 'Invalid field in request.', 'fields_available': [
-                    'download_json_das', 'downloads_das', 'verify_das_mei_data', 'sent_das_file']}, status=400)
-
-        # Atualiza a obrigação com os valores da requisição
-        serializer = MessageSerializer(
-            message, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save(
-                download_json_das=request.data.get(
-                    'download_json_das', message.download_json_das),
-                download_das=request.data.get(
-                    'download_das', message.download_das),
-                verify_das_mei_data=request.data.get(
-                    'verify_das_mei_data', message.verify_das_mei_data),
-                sent_das_file=request.data.get(
-                    'sent_das_file', message.notify_current_das)
-            )
-            logger.info(f"Message for {message.cnpj_base} updated")
-            return Response(serializer.data, status=200)
-        else:
-            return Response(serializer.errors, status=400)
+        text = f"Update message_id: {kwargs['message_id']} failed"
+        logger.debug(text)
+        return text
 
 
 @api_view(['PATCH'])
 def update_message(request: HttpRequest):
-    cnpj_base = request.query_params.get('cnpj')
-    period = request.query_params.get('period')
+    message_id = request.query_params.get('id')
+    status = request.query_params.get('status')
     view = MessageViewSet()
 
     try:
-        return view.up_obligation(request, cnpj_base=cnpj_base, period=period)
+        return view.up_message(request, message_id=message_id, status=status)
+    except NotFoundException:
+        return Response({'error': 400, 'message': "Mensagem não encontrada"}, status=400)
     except Exception as e:
-        raise Exception(e)
+        return Response({'error': 400, 'message': str(e)}, status=400)

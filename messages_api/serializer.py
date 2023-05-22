@@ -7,11 +7,10 @@ from messages_api.models import Message
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
-        # fields = '__all__'
-        exclude = ['id']
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Message.objects.all(),
-                fields=['cnpj_cpf', 'period']
-            )
-        ]
+        fields = '__all__'
+        # validators = [
+        #     UniqueTogetherValidator(
+        #         queryset=Message.objects.all(),
+        #         fields=['contact_id', 'message_id']
+        #     )
+        # ]

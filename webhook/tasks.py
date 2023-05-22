@@ -8,6 +8,12 @@ from httpx import Client
 from dotenv import load_dotenv
 from celery import shared_task
 from webhook.logger import Logger
+import os
+import requests
+from celery import shared_task
+from django.core.exceptions import ObjectDoesNotExist
+from webhook.logger import Logger
+from messages_api.event import get_chat_protocol, get_date_dict, get_phone_number
 
 load_dotenv()
 logger = Logger(__name__)
