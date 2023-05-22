@@ -7,9 +7,9 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
 from webhook.logger import Logger
-from messages_api.models import Message
+from messages_api.models import Message, Ticket
 from messages_api.exceptions import NotFoundException
-from messages_api.serializer import MessageSerializer
+from messages_api.serializer import MessageSerializer, TicketSerializer
 
 # Create your views here.
 logger = Logger(__name__)
@@ -216,3 +216,93 @@ def update_message(request: HttpRequest):
         return Response({'error': 400, 'message': "Mensagem não encontrada"}, status=400)
     except Exception as e:
         return Response({'error': 400, 'message': str(e)}, status=400)
+
+
+class TicketViewSet(viewsets.ModelViewSet):
+    queryset = Ticket.objects.all()
+    serializer_class = TicketSerializer
+    http_method_names = ['get', 'post', 'put', 'patch']
+
+    def get_queryset(self):
+        queryset = Ticket.objects.all()
+        ticket_id = self.request.query_params.get('id')
+
+        if ticket_id:
+            queryset.filter(message_id=ticket_id)
+
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        ticket_id = request.query_params.get('id')
+        period = request.query_params.get('period')
+
+        if not ticket_id:
+            return Response({'error': 'You must provide a ticket id query parameters.'}, status=400)
+        if not period:
+            return Response({'error': 'You must provide a period id query parameters.'}, status=400)
+
+        try:
+            if len(period) == 5:
+                period = '20' + period[-2:] + '-' + period[:2] + '-01'
+            dt.strptime(period, '%Y-%m-%d')
+        except ValueError:
+            return Response({'error': 'Invalid period format, should be YYYY-MM-DD or MM-YY.'}, status=400)
+
+        if len(period) == 5:
+            period = dt.now().strftime(
+                '%Y-') + period[-2:] + '-' + period[:2] + ' 00:00:00'
+
+        try:
+            message = Ticket.objects.create(
+                ticket_id=ticket_id,
+                period=period,
+            )
+        except (IntegrityError, TypeError) as e:
+            error_code, error_msg = e.args
+            text = str(error_msg)
+            logger.debug(f"{text}")
+            return Response({f"error {error_code}": "Something Wrong", "message": text}, status=409)
+
+        # obligation_control =
+        serializer = TicketSerializer(message)
+        return Response(serializer.data, status=201)
+
+    def list(self, request, *args, **kwargs):
+        try:
+            queryset = self.filter_queryset(
+                self.get_queryset())  # self.get_queryset()
+            serializer = self.get_serializer(queryset, many=True)
+
+            if not queryset:
+                return Response({"no_content": "There are no yet tickets to show"}, status=200)
+
+            return Response(serializer.data)
+        except NotFoundException as e:
+            return Response({'error': str(e)}, status=404)
+
+    def up_ticket(self, request=None, **kwargs):
+        message = Ticket.objects.get(message_id=kwargs['message_id'])
+        if message:
+            serializer = TicketSerializer(message)
+            serializer = TicketSerializer(
+                message, data={'status': kwargs['status']}, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=200)
+
+            return Response({"erro": serializer.errors}, status=400)
+
+        text = f"Update message_id: {kwargs['message_id']} failed"
+        logger.debug(text)
+        return text
+
+
+@api_view(['GET'])
+def list_tickets(request: HttpRequest):
+    view = TicketViewSet()
+    # try:
+    return view.list(request)
+    # except NotFoundException:
+    #     return Response({'error': 400, 'message': "Ticket não encontrado"}, status=400)
+    # except Exception as e:
+    #     return Response({'error': 400, 'message': str(e)}, status=400)

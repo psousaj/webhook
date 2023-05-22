@@ -1,7 +1,17 @@
-import os
 from django.db import models
 
-# Create your models here.
+
+class Ticket(models.Model):
+    ticket_id = models.CharField(max_length=255, primary_key=True)
+    period = models.DateTimeField()
+
+    @property
+    def messages(self):
+        return list(self.message_set.values('message_id', 'text', 'status'))
+
+    @property
+    def message_count(self):
+        return len(self.messages)
 
 
 class Message(models.Model):
@@ -12,11 +22,11 @@ class Message(models.Model):
     timestamp = models.DateTimeField(default=None)
     status = models.IntegerField(
         choices=((0, 'Criada'), (1, 'Enviada'), (2, 'Recebida'), (3, 'Visualizada')))
-    ticket_service_id = models.CharField(max_length=255)
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE)
     message_type = models.CharField(max_length=255)
     is_from_me = models.BooleanField(default=False)
-    text = models.CharField()
-    retries = models.IntegerField()
+    text = models.CharField(max_length=255)
+    retries = models.IntegerField(default=0)
 
     def __str__(self) -> str:
         return f"{self.contact_number} - {self.period} - {self.status}"

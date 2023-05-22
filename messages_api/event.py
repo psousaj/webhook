@@ -124,6 +124,19 @@ def handle_message_updated(self, message_id, status):
 
     return response
 
+
+@shared_task(name='create_message', retry_backoff=True, max_retry=3)
+def handle_ticket_created(ticket_id):
+    url = 'http://localhost:8000/webhook/messages/ticket/create'
+
+    response = requests.post(url, params={"id": ticket_id})
+    if response.status_code != 201:
+        text = f"Failed to create message_id: {id}\n{response}-{response.text}"
+        logger.debug(text)
+        return text
+
+    return response
+
 # def handle_message_confirm(data, cnpj, id_mess, confirm_file, name_company):
 #     if 'text' in data['data']:
 #         text = str(data['data']['text']).lower()
