@@ -31,10 +31,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 APPEND_SLASH = False
-CELERY_BROKER_URL = os.environ.get(
-    'CLOUDAMQP_URL_', os.getenv('CLOUDAMQP_URL'))
-BROKER_URL = os.environ.get(
-    'CLOUDAMQP_URL_', os.getenv('CLOUDAMQP_URL'))
+# CELERY_BROKER_URL = os.environ.get(
+#     'CLOUDAMQP_URL_', os.getenv('CLOUDAMQP_URL'))
+# BROKER_URL = os.environ.get(
+#     'CLOUDAMQP_URL_', os.getenv('CLOUDAMQP_URL'))
 # Application definition
 
 INSTALLED_APPS = [
@@ -48,8 +48,10 @@ INSTALLED_APPS = [
     'rest_framework',
     'example',
     'messages_api',
+    'contacts',
     'celery',
     'django_filters',
+    'control',
 ]
 
 MIDDLEWARE = [
@@ -93,9 +95,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'neondb',
-        'USER': 'psousaj',
-        'PASSWORD': 'EOyse2vRG5Ff',
-        'HOST': 'ep-young-feather-699075.us-east-1.aws.neon.tech',
+        'USER': os.environ.get('DB_USER', os.getenv('DB_USER')),
+        'PASSWORD': os.environ.get('DB_PASS', os.getenv('DB_PASS')),
+        'HOST': os.environ.get('DB_HOST', os.getenv('DB_HOST')),
         'PORT': '5432',
     }
 }

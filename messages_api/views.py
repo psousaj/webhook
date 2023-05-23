@@ -1,4 +1,5 @@
 from datetime import datetime as dt
+from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from django.db import IntegrityError
 from django.forms import ValidationError
@@ -9,7 +10,7 @@ from rest_framework.decorators import api_view
 from webhook.logger import Logger
 from messages_api.models import Message, Ticket
 from messages_api.exceptions import NotFoundException
-from messages_api.serializer import MessageSerializer, TicketSerializer
+from messages_api.serializer import MessageSerializer, TicketSerializer, TicketStatusSerializer
 
 # Create your views here.
 logger = Logger(__name__)
@@ -27,9 +28,9 @@ class MessageViewSet(viewsets.ModelViewSet):
         status = self.request.query_params.get('status')
 
         if message_id:
-            queryset.filter(message_id=message_id)
+            queryset = queryset.filter(message_id=message_id)
         if status:
-            queryset.filter(status=status)
+            queryset = queryset.filter(status=status)
         # if period:
         #     try:
         #         if len(period) == 5:
@@ -118,7 +119,8 @@ class MessageViewSet(viewsets.ModelViewSet):
         contact_id = request.data.get('contact_id')
         status = request.data.get('status')
         message_id = request.data.get('message_id')
-        ticket_id = request.data.get('ticket_id')
+        ticket_id = request.data.get('ticket')
+        ticket = get_object_or_404(Ticket, ticket_id=ticket_id)
         message_type = request.data.get('message_type')
         isFromMe = request.data.get('is_from_me')
         text = request.data.get('text')
@@ -127,7 +129,7 @@ class MessageViewSet(viewsets.ModelViewSet):
             return Response({'error': 'You must provide a phone_number query parameters.'}, status=400)
         if not period:
             return Response({'error': 'You must provide period query parameters.'}, status=400)
-        if not contact_id or status is None or not message_id or not ticket_id or not message_type:
+        if not contact_id or status is None or not message_id or not ticket or not message_type:
             return Response(
                 {
                     'error': 'You must provide all body fields.',
@@ -135,7 +137,7 @@ class MessageViewSet(viewsets.ModelViewSet):
                         "contact_id" if not contact_id else "",
                         "status" if not status else "",
                         "message_id" if not message_id else "",
-                        "ticket_id" if not ticket_id else "",
+                        "ticket" if not ticket else "",
                         "message_type" if not message_type else ""
                     ]
                 }, status=400)
@@ -158,17 +160,16 @@ class MessageViewSet(viewsets.ModelViewSet):
                 timestamp=timestamp,
                 status=status,
                 message_id=message_id,
-                ticket_service_id=ticket_id,
+                ticket=ticket,
                 message_type=message_type,
                 is_from_me=isFromMe,
                 text=text,
                 retries=0
             )
         except (IntegrityError, TypeError) as e:
-            error_code, error_msg = e.args
-            text = str(error_msg)
+            text = str(e)
             logger.debug(f"{text}")
-            return Response({f"error {error_code}": "Something Wrong", "message": text}, status=409)
+            return Response({f"error": "Something Wrong", "message": text}, status=409)
 
         # obligation_control =
         serializer = MessageSerializer(message)
@@ -219,16 +220,16 @@ def update_message(request: HttpRequest):
 
 
 class TicketViewSet(viewsets.ModelViewSet):
-    queryset = Ticket.objects.all()
+    # queryset = Ticket.objects.all()
     serializer_class = TicketSerializer
     http_method_names = ['get', 'post', 'put', 'patch']
 
     def get_queryset(self):
-        queryset = Ticket.objects.all()
         ticket_id = self.request.query_params.get('id')
+        queryset = Ticket.objects.all()
 
         if ticket_id:
-            queryset.filter(message_id=ticket_id)
+            queryset = queryset.filter(ticket_id=ticket_id)
 
         return queryset
 
@@ -280,29 +281,53 @@ class TicketViewSet(viewsets.ModelViewSet):
         except NotFoundException as e:
             return Response({'error': str(e)}, status=404)
 
-    def up_ticket(self, request=None, **kwargs):
-        message = Ticket.objects.get(message_id=kwargs['message_id'])
-        if message:
-            serializer = TicketSerializer(message)
-            serializer = TicketSerializer(
-                message, data={'status': kwargs['status']}, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=200)
+    def up_ticket(self, request, ticket_id, is_open):
+        try:
+            message = Ticket.objects.get(ticket_id=ticket_id)
+            if message:
+                serializer = TicketSerializer(message)
+                serializer = TicketSerializer(
+                    message, data={'is_open': is_open}, partial=True)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response({'success': 200, 'data': serializer.data}, status=200)
 
-            return Response({"erro": serializer.errors}, status=400)
+                return Response({"erro": serializer.errors}, status=400)
+        except Exception as e:
+            text = f"Update ticket: {ticket_id} failed"
+            logger.debug(text)
+            return Response({'error': 500, 'message': text, 'cause': str(e)}, status=500)
 
-        text = f"Update message_id: {kwargs['message_id']} failed"
-        logger.debug(text)
-        return text
+    def status(self, request):
+        try:
+            queryset = self.filter_queryset(
+                self.get_queryset())
+            serializer = TicketStatusSerializer(queryset, many=True)
+
+            if not queryset:
+                return Response({"no_content": "There are no yet tickets to show"}, status=200)
+
+            return Response(serializer.data)
+        except NotFoundException as e:
+            return Response({'error': str(e)}, status=404)
 
 
-@api_view(['GET'])
-def list_tickets(request: HttpRequest):
+@api_view(['PATCH'])
+def update_ticket(request: HttpRequest):
+    ticket_id = request.query_params.get('id')
+    is_open = request.query_params.get('open')
     view = TicketViewSet()
     # try:
-    return view.list(request)
+    return view.up_ticket(request, ticket_id, is_open)
     # except NotFoundException:
     #     return Response({'error': 400, 'message': "Ticket não encontrado"}, status=400)
     # except Exception as e:
     #     return Response({'error': 400, 'message': str(e)}, status=400)
+
+
+@api_view(['GET'])
+def get_status(request: HttpRequest):
+    id = request.query_params.get('id')
+    view = TicketViewSet
+
+    return view.status(id)
