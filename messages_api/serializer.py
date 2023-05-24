@@ -31,6 +31,13 @@ class TicketStatusSerializer(serializers.ModelSerializer):
 class TicketSerializer(serializers.ModelSerializer):
     messages = MessageSerializerByTicket(many=True, read_only=True)
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        messages = representation.get('messages', [])
+        messages_count = len(messages)
+        representation['messages'] = messages_count
+        return representation
+
     class Meta:
         model = Ticket
         fields = '__all__'

@@ -3,8 +3,11 @@ from django.db import models
 
 class Ticket(models.Model):
     ticket_id = models.CharField(max_length=255, primary_key=True)
-    period = models.DateTimeField()
+    period = models.CharField()
     is_open = models.BooleanField(default=True)
+    contact_id = models.CharField(max_length=255)
+    last_message_id = models.CharField(
+        max_length=500, default="ndsaujfbnujsafbncuj")
 
 
 class Message(models.Model):
@@ -19,7 +22,7 @@ class Message(models.Model):
         Ticket, on_delete=models.CASCADE, related_name="messages")
     message_type = models.CharField(max_length=255)
     is_from_me = models.BooleanField(default=False)
-    text = models.CharField(max_length=255)
+    text = models.CharField(max_length=500)
     retries = models.IntegerField(default=0)
 
     def __str__(self) -> str:

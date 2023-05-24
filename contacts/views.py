@@ -20,8 +20,14 @@ class ContactViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         contact_id = self.request.query_params.get('id')
+        cnpj = self.request.query_params.get('cnpj')
+        contact = self.request.query_params.get('contact')
         queryset = Contact.objects.all()
 
+        if cnpj:
+            queryset = queryset.filter(cnpj=cnpj)
+        if contact:
+            queryset = queryset.filter(contact_number=contact)
         if contact_id:
             queryset = queryset.filter(contact_id=contact_id)
 

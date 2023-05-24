@@ -2,6 +2,7 @@ import os
 import json
 import requests
 from datetime import datetime as dt
+# from control.functions import check_client_response
 
 from webhook.logger import Logger
 from webhook.request import get_chat_protocol
@@ -26,14 +27,19 @@ def get_event_status(event, message_id: str = None, ticket_id: str = None) -> in
             if response['is_open']:
                 return True
 
-        return False
+            return False
+    try:
+        if event == 'message':
+            url = f"{os.getenv('WEBHOOK_API')}/messages/list"
+            response = requests.get(url, params={"id": message_id})
 
-    if event == 'message':
-        url = f"{os.getenv('WEBHOOK_API')}/messages/list"
-        response = requests.get(url, params={"id": message_id})
-
-        if response.status_code == 200:
-            return int(response.json()[0]['status'])
+            if response.status_code == 200:
+                return int(response.json()[0]['status'])
+    except KeyError as e:
+        logger.debug(str(e))
+        # raise KeyError
+    except Exception as e:
+        logger.debug(e)
 
 
 def extract_value(input_list):
@@ -43,19 +49,25 @@ def extract_value(input_list):
     return input_list
 
 
-def get_phone_number(contactId: str):
+def get_phone_number(contactId: str, only_number=False):
     url = f"{os.getenv('WEBHOOK_API')}/contacts"
     response = requests.get(url, params={"id": contactId})
 
     if response.status_code == 200:
-        contact = response.json()
+        contact = response.json()[0]
 
-        return f"{contact['country_code']}{contact['ddd']}{contact['contact_number']}"
+        if not only_number:
+            return f"{contact['country_code']}{contact['ddd']}{contact['contact_number']}"
+        else:
+            return f"{contact['contact_number']}"
 
     return None
 
 
-def get_current_period() -> str:
+def get_current_period(file_name=False) -> str:
+    if file_name:
+        return dt.today().strftime('%B/%Y').capitalize()
+
     return dt.today().strftime('%m/%y')
 
 
@@ -79,10 +91,13 @@ def manage(data):
                 args=[data, extract_value(isFromMe)])
         if event == 'message.updated':
             return handle_message_updated.apply_async(
-                args=[extract_value(message_id), data], countdown=5, queue='message_update')
+                args=[extract_value(message_id), data], countdown=15)
         if event == 'ticket.created':
             id = extract_value(data['data']['id'])
-            return handle_ticket_created.apply_async(args=[id])
+            contact_id = extract_value(data['data']['contactId'])
+            last_message_id = extract_value(
+                data['data']['lastMessageId']) if not "null" else "FIRST_MESSAGE"
+            return handle_ticket_created.apply_async(args=[id, contact_id, last_message_id])
         if event == 'ticket.updated':
             id = extract_value(data['data']['id'])
             return handle_ticket_updated.apply_async(args=[id, data])
@@ -94,11 +109,11 @@ def manage(data):
 
 @shared_task(name='create_message', retry_backoff=True, max_retry=3)
 def handle_message_created(data, isFromMe: bool):
-    url = "http://woz.serveo.net/webhook/messages/create"
+    url = f"{os.environ.get('WEBHOOK_API', os.getenv('WEBHOOK_API'))}/messages/create"
     contact_id = data['data']['contactId']
     date = get_current_period()
     number = get_phone_number(contact_id)
-    parameters = {"phone": number, "period": date['current_period']}
+    parameters = {"phone": number, "period": date}
     message_body = {
         "message_id": data['data']['id'],
         "contact_id": contact_id,
@@ -111,18 +126,23 @@ def handle_message_created(data, isFromMe: bool):
     }
 
     if number is None:
-        raise ValueError(f'Consulta do telefone na {url} com id {contact_id}')
+        raise ValueError(
+            f'Consulta do telefone na {url} com id {contact_id} falhou')
     # if not isFromMe:
     response = requests.post(url, json=message_body, params=parameters)
+    if not isFromMe:
+        pass
+        # check_client_response.apply_async(args=[contact_id])
+
     if response.status_code != 201:
-        text = f"Failed to create message_id: {data['data']['id']}\n{response}-{response.text}"
+        text = f"Failed to create message_id: {data['data']['id']}\n{response}-\n{response.text}"
         logger.debug(text)
         raise ValueError(text)
 
     return response
 
 
-@shared_task(bind=True, name='update_message', autoretry_for=((ObjectDoesNotExist),), retry_backoff=True, max_retries=3)
+@shared_task(bind=True, name='update_message', retry_backoff=True, max_retries=3)
 def handle_message_updated(self, message_id: str, data):
 
     try:
@@ -140,25 +160,31 @@ def handle_message_updated(self, message_id: str, data):
                 raise Exception(f"{text} - {status}")
         else:
             return f"Status:{status} menor que o atual da mensagem com id: {message_id}"
+    except TypeError as e:
+        self.retry(exc=f"{e} - {status}", countdown=30)
+    except KeyError as e:
+        return f"Bug: str({e})"
     except ValueError as e:
-        raise self.retry(exc=f"{e} - {status}", countdown=60)
+        self.retry(exc=f"{e} - {status}", countdown=30)
     except Exception as e:
-        raise self.retry(exc=e, countdown=60)
+        self.retry(exc=f"{e} - {status}", countdown=30)
 
     return response
 
 
 @shared_task(name='create_ticket', retry_backoff=True, max_retry=3)
-def handle_ticket_created(ticket_id: str):
+def handle_ticket_created(ticket_id: str, contact_id, last_message_id):
     url = f'{os.getenv("WEBHOOK_API")}/messages/create/ticket'
     params = {
         "id": ticket_id,
-        "period": get_current_period()
+        "period": get_current_period(),
+        "contact": contact_id,
+        "last_message": last_message_id
     }
 
     response = requests.post(url, params=params)
     if response.status_code != 201:
-        text = f"Failed to create message_id: {id}\n{response}-{response.text}"
+        text = f"Failed to create ticket with id: {ticket_id}\n{response}-{response.text}"
         logger.debug(text)
         return text
 
@@ -171,8 +197,9 @@ def handle_ticket_updated(ticket_id: str, data):
     try:
         actual_status = get_event_status('ticket', ticket_id=ticket_id)
         is_open = bool(extract_value(data['data']['isOpen']))
+        last_message_id = extract_value(data['data']['lastMessageId'])
         if actual_status and not is_open:
-            url = f"{os.getenv('WEBHOOK_API')}/messages/update/ticket?id={ticket_id}&open=0"
+            url = f"{os.getenv('WEBHOOK_API')}/messages/update/ticket?id={ticket_id}&open=0&last_message={last_message_id}"
             response = requests.patch(url)
 
             if response.status_code in range(400, 404):

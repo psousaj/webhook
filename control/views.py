@@ -1,16 +1,15 @@
-from datetime import datetime as dt
-from django.db import IntegrityError
 from django.http import HttpRequest
+from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
 
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
+from webhook.logger import Logger
 from messages_api.models import Ticket
 from control.models import MessageControl
 from control.serializer import ControlMessageSerializer
-from webhook.logger import Logger
 
 # Create your views here.
 logger = Logger(__name__)
@@ -22,17 +21,22 @@ class ControlMessageViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'put', 'patch']
 
     def get_queryset(self):
-        control_message_id = self.request.query_params.get('id')
+        control_id = self.request.query_params.get('id')
+        period = self.request.query_params.get('period')
+        contact = self.request.query_params.get('contact')
         queryset = MessageControl.objects.all()
 
-        if control_message_id:
-            queryset = queryset.filter(id=control_message_id)
+        if control_id:
+            queryset = queryset.filter(control_id=control_id)
+        if period and contact:
+            queryset = queryset.filter(contact=contact, period=period)
 
         return queryset
 
     def create(self, request, *args, **kwargs):
         ticket_id = request.query_params.get('id')
         contact = request.query_params.get('phone')
+        period = request.query_params.get('period')
         pendencies = request.query_params.get('pendencies')
 
         if not ticket_id:
@@ -47,6 +51,7 @@ class ControlMessageViewSet(viewsets.ModelViewSet):
             control = MessageControl.objects.create(
                 ticket=ticket,
                 contact=contact,
+                period=period
             )
         except (IntegrityError, TypeError) as e:
             error_code, error_msg = e.args
