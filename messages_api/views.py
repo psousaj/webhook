@@ -185,11 +185,11 @@ class MessageViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(queryset, many=True)
 
             if not queryset:
-                return Response({"no_content": "There are no yet messages to show"}, status=200)
+                return Response({"no_content": "There are no yet messages to show"}, status=404)
 
             return Response(serializer.data)
         except NotFoundException as e:
-            return Response({'error': str(e)}, status=404)
+            return Response({'error': str(e)}, status=500)
 
     def up_message(self, request, **kwargs):
         message = Message.objects.get(message_id=kwargs['message_id'])
@@ -290,11 +290,11 @@ class TicketViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(queryset, many=True)
 
             if not queryset:
-                return Response({"no_content": "There are no yet tickets to show"}, status=200)
+                return Response({"no_content": "There are no yet tickets to show"}, status=404)
 
             return Response(serializer.data)
         except NotFoundException as e:
-            return Response({'error': str(e)}, status=404)
+            return Response({'error': str(e)}, status=500)
 
     def up_ticket(self, request, ticket_id, is_open, last_message_id):
         try:

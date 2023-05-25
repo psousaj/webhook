@@ -1,2 +1,1 @@
 python-3.9.16
-CLOUDAMQP_URL=amqps://zjklvlfo:AXJUj7VjAjoiWqPtiZKXoHcfkPrjfrjj@gull.rmq.cloudamqp.com/zjklvlfo

@@ -2,6 +2,7 @@ import os
 import re
 from celery import shared_task
 from datetime import datetime as dt
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 
 import requests
@@ -35,22 +36,27 @@ def process_input(sentence, contact_id, retries, pendencies, exact_match):
         if pendencies:
             send_message(
                 contact_id, text="Vou enviar os arquivos agora mesmo!")
+            close_ticket.apply_async(args=[contact_id])
         else:
             send_message(contact_id, text="Obrigado por confirmar!")
-
-        return True
+            close_ticket.apply_async(args=[contact_id])
+        return "Atendimento Encerrado com sucesso!"
 
     if pendencies and is_match(sentence, negative_responses, exact_match):
         send_message(
             contact_id, text="Tudo bem! Caso necessite de mais alguma coisa, não hesite em nos perguntar!")
-        return True
+        close_ticket.apply_async(args=[contact_id])
+        return "Atendimento Encerrado com sucesso!"
 
     if is_match(sentence, assistance_requests, exact_match) or retries >= 3:
         send_message(
             contact_id, text="Estou lhe encaminhando para um de nossos atendentes. Aguarde por favor!\n\nOlá, SOU SEU ATENDENTE FICTÍCIO!!")
-        return True
+        close_ticket.apply_async(args=[contact_id])
+        return "Encaminhado para um atendente"
 
-    return False
+    error_text: str = generate_error_message(retries, pendencies)
+    send_message(contact_id, text=error_text)
+    return "Mensagem de erro enviada"
 
 
 def generate_error_message(retries, pendencies) -> str:
@@ -62,6 +68,7 @@ def generate_error_message(retries, pendencies) -> str:
 
     if retries >= 2:
         base_message += '\nSe precisar falar com um de nossos atendentes digite "atendente"'
+
     return base_message
 
 
@@ -69,47 +76,41 @@ def generate_error_message(retries, pendencies) -> str:
 def check_client_response(self, contact_id):
     try:
         contact_number = get_phone_number(contact_id, only_number=True)
-        contact_number = get_phone_number(contact_id, only_number=True)
         period = dt.strptime(get_current_period(),
                              "%m/%y").strftime('%Y-%m-%d')
-        logger.info(period)
         control = get_object_or_404(
             MessageControl, contact=contact_number, period=period)
 
-        # if control.DoesNotExist:
-        #     raise ValueError('Controle de chamado inexistente')
         if control.status == 0 and not control.is_from_me_last_message():
             message_text = control.get_last_message_text()
             pendencies = control.pendencies
-            control_retries = control.retries
-            retries = 1
+            retries = control.retries
+            control.retries += 1
+            control.save()
 
-            # process_input(message_text, contact_id, retries,
-            #               pendencies, exact_match=False)
-
-            while True:
-                while not process_input(message_text, control_retries, pendencies, exact_match=False):
-                    if control_retries >= 3 and not process_input(message_text, control_retries, pendencies, exact_match=False):
-                        close_ticket(contact_id)
-                        break
-
-                    user_input = send_message(
-                        contact_id, text=generate_error_message(control_retries, pendencies))
-                    retries += 1
-
-                break
-        elif control.status == 0 and control.is_from_me_last_message():
-            # time.sleep(15)
-            return "Aguardando resposta ainda"
+            return process_input(message_text, contact_id, retries,
+                                 pendencies, exact_match=False)
+        return "Aguardando resposta do cliente"
 
     except Exception as e:
         logger.debug(e)
-        raise self.retry(exc=f"{e}", countdown=30)
+        raise self.retry(exc=f"{e}", countdown=15)
 
 
 @shared_task(name='close-ticket')
 def close_ticket(contact_id):
-    return any_request(f'/contacts/{contact_id}/ticket/close', method='post', json=False)
+    contact_number = get_phone_number(contact_id, only_number=True)
+    period = dt.strptime(get_current_period(),
+                         "%m/%y").strftime('%Y-%m-%d')
+    control = get_object_or_404(
+        MessageControl, contact=contact_number, period=period)
+
+    # Fechar Control:
+    control.status = 1
+    control.save()
+    # Fechar Ticket
+    any_request(f'/contacts/{contact_id}/ticket/close',
+                method='post', json=False)
 
 
 @shared_task(name='open-ticket')
@@ -135,9 +136,10 @@ def get_message_json(contact_id, message, file_b64, subject="Sem Assunto"):
 
 def send_message(contact_id, text="", file=None, create_ticket=False):
     body = get_message_json(contact_id, text, file)
+    body_create_ticket = get_message_json(contact_id, "Olá", file)
 
     if create_ticket:
-        open_ticket(contact_id)
+        any_request('/messages', body=body_create_ticket, method='post')
         return any_request('/messages', body=body, method='post')
 
     return any_request('/messages', body=body, method='post')
@@ -169,3 +171,15 @@ def init_app(request):
     # except Exception as e:
     #     logger.debug(str(e))
     #     return Response({'error': str(e)}, status=500)
+
+
+@api_view(['GET'])
+def check_client_response_viewset(request):
+    try:
+        contact_id = request.query_params.get('contact_id')
+        check_client_response.apply_async(args=[contact_id])
+
+        return JsonResponse({"Status": "Message check is in process"})
+    except Exception as e:
+        logger.debug(str(e))
+        return Response({'Status': 'Something was wrong', 'message': f'{str(e)}'}, status=500)
