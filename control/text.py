@@ -1,7 +1,7 @@
 from messages_api.event import get_current_period
 import locale
 
-locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
+# locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 
 saudacao = f"""
 Olá, espero que esteja bem.
