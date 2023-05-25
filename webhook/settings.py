@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     'messages_api',
     'contacts',
     'celery',
-    'django_filters',
     'control',
 ]
 
