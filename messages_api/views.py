@@ -320,7 +320,7 @@ class TicketViewSet(viewsets.ModelViewSet):
             serializer = TicketStatusSerializer(queryset, many=True)
 
             if not queryset:
-                return Response({"no_content": "There are no yet tickets to show"}, status=200)
+                return Response({"no_content": "There are no yet tickets to show"}, status=404)
 
             return Response(serializer.data)
         except NotFoundException as e:

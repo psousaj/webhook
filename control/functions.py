@@ -1,8 +1,9 @@
 import os
 import re
+import time
 from celery import shared_task
 from datetime import datetime as dt
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 
 import requests
@@ -19,8 +20,15 @@ from rest_framework.response import Response
 logger = Logger(__name__)
 
 
+def format_responses(responses):
+    responses = re.sub(r"\\b|\(\)|\(|\)", "", responses)
+    responses = responses.replace('\\s', " ")
+    return responses
+
+
 def is_match(input_word, responses, exact_match):
     if exact_match:
+        responses = format_responses(responses)
         return any(word in input_word.split() for word in responses.split('|'))
 
     return bool(re.search(responses, input_word, re.IGNORECASE))
@@ -29,8 +37,8 @@ def is_match(input_word, responses, exact_match):
 def process_input(sentence, contact_id, retries, pendencies, exact_match):
     positive_responses = r"\b(sim|bacana|ok|tá|ta|bom|recebi|receb|na\shora|ótimo|beleza|blz|entendi|show|confirmado|confirme|tá\sótimo|massa|s|manda|mande|envia|pode|👍|👍🏾|👍🏻|👍🏼|👍🏿|pode\sser)\b"
     # |não\smande|nao\smande
-    negative_responses = r"\b(n|nao|pare|parar|stop|não)\b"
-    assistance_requests = r"\b(atendente|humano|pessoa|atendimento|atedente|sair)\b"
+    negative_responses = r"\b(n|nao|pare|parar|stop|não|\?)\b"
+    assistance_requests = r"\b(atendente|humano|pessoa|atendimento|atedente|sair|porque|Porque|Por que|por que|Por quê)\b"
 
     if is_match(sentence, positive_responses, exact_match) and not is_match(sentence, negative_responses, exact_match):
         if pendencies:
@@ -40,17 +48,17 @@ def process_input(sentence, contact_id, retries, pendencies, exact_match):
         else:
             send_message(contact_id, text="Obrigado por confirmar!")
             close_ticket.apply_async(args=[contact_id])
-        return "Atendimento Encerrado com sucesso!"
+        return "Atendimento encerrado com sucesso!"
 
     if pendencies and is_match(sentence, negative_responses, exact_match):
         send_message(
             contact_id, text="Tudo bem! Caso necessite de mais alguma coisa, não hesite em nos perguntar!")
         close_ticket.apply_async(args=[contact_id])
-        return "Atendimento Encerrado com sucesso!"
+        return "Atendimento Encerrado com sucesso! Cliente não quis o boleto"
 
     if is_match(sentence, assistance_requests, exact_match) or retries >= 3:
         send_message(
-            contact_id, text="Estou lhe encaminhando para um de nossos atendentes. Aguarde por favor!\n\nOlá, SOU SEU ATENDENTE FICTÍCIO!!")
+            contact_id, text="Tudo bem! Estou lhe encaminhando para um de nossos atendentes. Aguarde por favor!\n\nOlá, SOU SEU ATENDENTE FICTÍCIO!!")
         close_ticket.apply_async(args=[contact_id])
         return "Encaminhado para um atendente"
 
@@ -113,9 +121,29 @@ def close_ticket(contact_id):
                 method='post', json=False)
 
 
-@shared_task(name='open-ticket')
-def open_ticket(contact_id):
-    return any_request(f'/contacts/{contact_id}/ticket/transfer', method='post', json=False)
+def get_control_object(contact_id):
+    try:
+        contact_number = get_phone_number(contact_id, only_number=True)
+        period = dt.strptime(get_current_period(),
+                             "%m/%y").strftime('%Y-%m-%d')
+        control = get_object_or_404(
+            MessageControl, contact=contact_number, period=period)
+
+        return control
+    except Http404 as e:
+        logger.debug(str(e))
+        return None
+
+
+@shared_task(name='update_control_pendencies')
+def update_ticket_control_pendencies(contact_id, pendencies):
+    control = get_control_object(contact_id)
+    while not control:
+        time.sleep(1)
+    control.pendencies = pendencies
+    control.save()
+
+    return f"Pendencias atualizadas contact_id: {contact_id}"
 
 
 def get_message_json(contact_id, message, file_b64, subject="Sem Assunto"):
@@ -136,11 +164,10 @@ def get_message_json(contact_id, message, file_b64, subject="Sem Assunto"):
 
 def send_message(contact_id, text="", file=None, create_ticket=False):
     body = get_message_json(contact_id, text, file)
-    body_create_ticket = get_message_json(contact_id, "Olá", file)
 
-    if create_ticket:
-        any_request('/messages', body=body_create_ticket, method='post')
-        return any_request('/messages', body=body, method='post')
+    # if create_ticket:
+    #     any_request('/messages', body=body_create_ticket, method='post')
+    #     return any_request('/messages', body=body, method='post')
 
     return any_request('/messages', body=body, method='post')
 
@@ -164,6 +191,8 @@ def init_app(request):
 
         if pendencies:
             send_message(contact_id, text=pendencies_text)
+            update_ticket_control_pendencies.apply_async(
+                args=[contact_id, True])
         else:
             send_message(contact_id, text=disclaimer)
 

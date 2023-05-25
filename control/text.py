@@ -3,8 +3,7 @@ import locale
 
 # locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 
-saudacao = f"""
-Olá, espero que esteja bem.
+saudacao = f"""Olá, espero que esteja bem.
 Gostaria de informar que seu Documento de Arrecadação Simplificado(DAS) 
 período ({get_current_period(file_name=True)}) está disponível, irei envia-lo em seguida.
 Lembrando que é importante que o pagamento seja realizado

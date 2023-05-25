@@ -1,12 +1,10 @@
-import os
-import requests
-from datetime import datetime as dt
-
-from webhook.logger import Logger
+from celery import shared_task
 from webhook.request import get_chat_protocol, any_request
 from webhook.logger import Logger
+from datetime import datetime as dt
+import requests
+import os
 
-from celery import shared_task
 
 logger = Logger(__name__)
 
@@ -22,6 +20,8 @@ def get_event_status(event, message_id: str = None, ticket_id: str = None) -> in
             if response['is_open']:
                 return True
 
+            return False
+        elif response.status_code == 404:
             return False
     try:
         if event == 'message':
@@ -273,7 +273,7 @@ def handle_ticket_updated(ticket_id: str, data):
             if response.status_code == 200:
                 return response
         else:
-            return (f"Status:False - o ticket com id: {ticket_id} já está fechado")
+            return (f"Status:{actual_status} - o ticket com id: {ticket_id} já está fechado ou ainda não foi criado")
     except ValueError as e:
         logger.debug(e)
 

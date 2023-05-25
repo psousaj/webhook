@@ -16,10 +16,10 @@ logger = Logger(__name__)
 def webhook_receiver(request: HttpRequest):
     data = json.loads(request.body) if request.body else {}
     # logger.info(f"Received webhook request\n{data}")
-    event.manage(data)
     try:
-        with open(f'messages/message{data["timestamp"]}.json', 'w') as f:
-            json.dump(data, f)
+        event.manage(data)
+        # with open(f'messages/message{data["timestamp"]}.json', 'w') as f:
+        #     json.dump(data, f)
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         filename = inspect.getframeinfo(exc_tb.tb_frame).filename
