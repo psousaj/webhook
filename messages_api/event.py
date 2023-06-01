@@ -1,6 +1,7 @@
 from celery import shared_task
 from webhook.request import get_chat_protocol, any_request
 from webhook.logger import Logger
+from contacts.get_objects import get_contact
 from datetime import datetime as dt
 import requests
 import os
@@ -46,16 +47,13 @@ def extract_value(input_list):
 
 
 def get_phone_number(contactId: str, only_number=False):
-    url = f"{os.getenv('WEBHOOK_API')}/contacts"
-    response = requests.get(url, params={"id": contactId})
+    contact = get_contact(contactId)
 
-    if response.status_code == 200:
-        contact = response.json()[0]
-
+    if contact:
         if not only_number:
-            return f"{contact['country_code']}{contact['ddd']}{contact['contact_number']}"
+            return f"{contact.country_code}{contact.ddd}{contact.contact_number}"
         else:
-            return f"{contact['contact_number']}"
+            return f"{contact.contact_number}"
 
     return None
 
@@ -84,19 +82,21 @@ def uṕdate_ticket_last_message(ticket_id):
 
         if ticket_response.status_code == 200:
             return "Show Papai. Atualizado!!"
-        else:
-            raise ValueError(f"Algo de errado não está certo")
+        elif ticket_response.status_code in range(405, 501):
+            raise ValueError(
+                f"Algo de errado não está certo - {ticket_response} - {ticket_response.text}")
+
+        return "Nada foi feito! Ticket provavelmente ainda não foi criado"
 
 
 def manage(data):
     try:
         event = data['event']
         # Protocolo para encaminhar no grupo
-        protocol = get_chat_protocol(data["data"]["ticketId"])
         isFromMe: bool = data['data']['isFromMe'],
         message_id: str = data['data']['id'],
     except Exception as e:
-        pass
+        message_id = None
 
     try:
         if event == 'message.created':
@@ -108,7 +108,7 @@ def manage(data):
 
         if event == 'message.updated':
             return handle_message_updated.apply_async(
-                args=[extract_value(message_id), data], countdown=7)
+                args=[extract_value(message_id), data], countdown=5)
         if event == 'ticket.created':
             id = extract_value(data['data']['id'])
             contact_id = extract_value(data['data']['contactId'])
@@ -141,14 +141,14 @@ def message_is_saved(message_id):
         return True
 
 
-@shared_task(name='create_message', retry_backoff=True, max_retry=3)
+@shared_task(name='create_message', autoretry_for=((ValueError,)), retry_backoff=True, max_retry=3)
 def handle_message_created(data, isFromMe: bool):
     message_exists = message_exists_in_digisac(data['data']['id'])
     message_saved = message_is_saved(data['data']['id'])
 
     if message_exists and message_saved:
         handle_message_updated.apply_async(
-            args=[extract_value(data['data']['id']), data], countdown=15)
+            args=[extract_value(data['data']['id']), data])
         return "Mensagem já existe mandada pra atualização"
 
     url = f"{os.environ.get('WEBHOOK_API', os.getenv('WEBHOOK_API'))}/messages/create"
@@ -176,7 +176,7 @@ def handle_message_created(data, isFromMe: bool):
     uṕdate_ticket_last_message(
         ticket_id=extract_value(data['data']['ticketId']))
 
-    if not isFromMe:
+    if not isFromMe and not response.status_code in range(400, 501):
         check_url = f'{os.environ.get("WEBHOOK_API", os.getenv("WEBHOOK_API"))}/control/check_response'
         requests.get(check_url, params={"contact_id": contact_id})
 
@@ -194,6 +194,8 @@ def handle_message_created(data, isFromMe: bool):
 
 @shared_task(bind=True, name='update_message', retry_backoff=True, max_retries=3)
 def handle_message_updated(self, message_id: str, data):
+    if not message_id:
+        return "Message vazio. diabo é isso?"
     message_exists = message_exists_in_digisac(message_id=message_id)
     message_saved = message_is_saved(message_id)
 

@@ -24,7 +24,7 @@ class Logger:
 
         # Adicionando os handlers ao logger
         self.logger.addHandler(self.console_handler)
-        self.logger.addHandler(self.file_handler)
+        # self.logger.addHandler(self.file_handler)
 
     def debug(self, msg, *args, **kwargs):
         self.logger.debug(msg, *args, **kwargs)

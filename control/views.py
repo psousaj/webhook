@@ -1,3 +1,6 @@
+import os
+from datetime import datetime as dt
+from datetime import date
 from django.http import HttpRequest
 from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
@@ -5,11 +8,15 @@ from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
+from contacts.serializer import PendenciesSerializer
 
 from webhook.logger import Logger
 from messages_api.models import Ticket
+from contacts.get_objects import get_any_contact
+from contacts.models import Pendencies
 from control.models import MessageControl
 from control.serializer import ControlMessageSerializer
+from control.functions import send_message
 
 # Create your views here.
 logger = Logger(__name__)
@@ -105,3 +112,56 @@ def update_control_message(request: HttpRequest):
     #     return Response({'error': 400, 'message': "MessageControl não encontrado"}, status=400)
     # except Exception as e:
     #     return Response({'error': 400, 'message': str(e)}, status=400)
+
+
+@api_view(['POST'])
+def send_report_to_group(request: HttpRequest):
+    text = request.data.get('text')
+    group = request.query_params.get('group')
+
+    if group is None:
+        return Response({"error": 400, "message": "Informe o grupo que vai receber a mensagem (?group='{group_name}')"}, status=400)
+
+    send_message(
+        os.environ.get(f'{group}_GROUP_ID', os.getenv(f'{group}_GROUP_ID')),
+        text
+    )
+    return Response({"Success": f"Enviado para o grupo {group}"})
+
+
+@api_view(['POST'])
+def create_pendencies_viewset(request: HttpRequest):
+    cnpj = request.query_params.get('cnpj')
+    period_str = request.query_params.get('period')
+    file = request.data.get('pdf')
+
+    if cnpj is None or period_str is None:
+        return Response({"error": f"You must provide cnpj & period query params"}, status=400)
+
+    if file is None:
+        return Response({"error": f"You must provide a base64 pdf converted on body fields 'pdf'"}, status=400)
+
+    try:
+        period = dt.strptime(period_str, "%Y-%m-%d").date()
+    except ValueError:
+        return Response({"error": "Invalid date format. It should be YYYY-MM-DD."}, status=400)
+
+    contact = get_any_contact(cnpj=cnpj)
+    if contact is None:
+        return Response({"error": f"No contact found with cnpj: {cnpj}"}, status=404)
+
+    try:
+        pendencie = Pendencies.objects.create(
+            contact=contact,
+            cnpj=cnpj,
+            period=period,
+            pdf=file,
+        )
+        serializer = PendenciesSerializer(pendencie)
+        return Response(serializer.data, status=201)
+
+    except (IntegrityError, TypeError) as e:
+        error_code, error_msg = e.args
+        text = str(error_msg)
+        logger.debug(f"{text}")
+        return Response({f"error {error_code}": "Something Wrong", "message": text}, status=409)

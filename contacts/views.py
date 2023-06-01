@@ -36,6 +36,7 @@ class ContactViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         cnpj = request.query_params.get('cnpj')
         contact_id = request.query_params.get('id')
+        company_name = request.data.get('company_name')
         id_establishment = request.data.get('id_establishment')
         country_code = request.data.get('country_code')
         ddd = request.data.get('ddd')
@@ -50,6 +51,7 @@ class ContactViewSet(viewsets.ModelViewSet):
             contact = Contact.objects.create(
                 cnpj=cnpj,
                 contact_id=contact_id,
+                company_name=company_name,
                 id_establishment=id_establishment,
                 country_code=country_code,
                 ddd=ddd,

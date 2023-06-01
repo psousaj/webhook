@@ -16,7 +16,7 @@ def any_request(url, body=None, method=get, json=True) -> get:
 
     with Client(base_url=os.environ.get('API_URL', os.getenv('API_URL')), headers=header) as client:
         if method == 'get':
-            get_response = client.get(url)
+            get_response: get = client.get(url)
             return get_response.json() if json else get_response
         if method == 'post':
             response = client.post(url, json=body)

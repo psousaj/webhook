@@ -1,16 +1,15 @@
 from datetime import datetime as dt
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from django.db import IntegrityError
-from django.forms import ValidationError
 from django.http.request import HttpRequest
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
 from webhook.logger import Logger
 from messages_api.models import Message, Ticket
-from control.models import MessageControl
-from control.serializer import ControlMessageSerializer
+from control.models import MessageControl, TicketLink
 from contacts.models import Contact
 from messages_api.exceptions import NotFoundException
 from messages_api.serializer import MessageSerializer, TicketSerializer, TicketStatusSerializer
@@ -123,7 +122,12 @@ class MessageViewSet(viewsets.ModelViewSet):
         status = request.data.get('status')
         message_id = request.data.get('message_id')
         ticket_id = request.data.get('ticket')
-        ticket = get_object_or_404(Ticket, ticket_id=ticket_id)
+        try:
+            ticket = Ticket.objects.get(ticket_id=ticket_id)
+        except Ticket.DoesNotExist:
+            logger.debug(f"Ticket with ticket_id {ticket_id} not found.")
+            return Response({f"Ticket with ticket_id {ticket_id} not found."}, status=201)
+
         message_type = request.data.get('message_type')
         isFromMe = request.data.get('is_from_me')
         text = request.data.get('text')
@@ -257,8 +261,7 @@ class TicketViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Invalid period format, should be YYYY-MM-DD or MM-YY.'}, status=400)
 
         if len(period) == 5:
-            period = dt.now().strftime(
-                '%Y-') + period[-2:] + '-' + period[:2]
+            period = dt.now().strftime('%Y-') + period[-2:] + '-' + period[:2]
 
         try:
             message = Ticket.objects.create(
@@ -268,18 +271,28 @@ class TicketViewSet(viewsets.ModelViewSet):
                 last_message_id=last_message_id
             )
             contact = get_object_or_404(Contact, contact_id=contact_id)
-            control_message = MessageControl.objects.create(
-                ticket=get_object_or_404(Ticket, ticket_id=ticket_id),
-                contact=contact.contact_number,
-                period=period
-            )
+            contact_number = contact.contact_number
+
+            # Check if MessageControl already exists for this contact and period
+            try:
+                message_control = MessageControl.objects.get(
+                    contact=contact_number, period=period)
+                # If it does, create a TicketLink and add the new Ticket to it
+                ticket_link = message_control.get_or_create_ticketlink()
+                ticket_link.append_new_ticket(message)
+            except MessageControl.DoesNotExist:
+                # If not, create a new MessageControl
+                message_control = MessageControl.objects.create(
+                    ticket=message,
+                    contact=contact_number,
+                    period=period
+                )
+
         except (IntegrityError, TypeError) as e:
-            # error_code, error_msg = e.args
             text = str(e)
             logger.debug(f"{text}")
             return Response({f"error {e}": "Something Wrong", "message": text}, status=409)
 
-        # obligation_control =
         serializer = TicketSerializer(message)
         return Response(serializer.data, status=201)
 

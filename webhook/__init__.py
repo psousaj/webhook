@@ -25,7 +25,7 @@ event_queue_expires = 60
 # Disable prefetching, it's causes problems and doesn't help performance
 worker_prefetch_multiplier = 1
 # If you tasks are CPU bound, then limit to the number of cores, otherwise increase substainally
-worker_concurrency = 4
+worker_concurrency = 8
 
 
 @app.task(bind=True)
