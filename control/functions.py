@@ -21,7 +21,7 @@ from rest_framework.response import Response
 logger = Logger(__name__)
 
 POSITIVE_RESPONSES = r"\b(sim|bacana|ok|tá|ta|bom|recebi|receb|na\shora|ótimo|beleza|blz|entendi|show|confirmado|confirme|tá\sótimo|massa|s|manda|mande|envia|pode|👍|👍🏾|👍🏻|👍🏼|👍🏿|pode\sser)\b"
-NEGATIVE_RESPONSES = r"\b(n|nao|pare|parar|stop|não|\?)\b"
+NEGATIVE_RESPONSES = r"\b(n|nao|pare|parar|stop|não|\?|nada)\b"
 ASSISTANCE_REQUESTS = r"\b(atendente|humano|pessoa|atendimento|atedente|sair|porque|Porque|Por que|por que|Por quê)\b"
 
 
@@ -39,11 +39,10 @@ def is_match(input_word, responses, exact_match):
     return bool(re.search(responses, input_word, re.IGNORECASE))
 
 
-def process_input(sentence, contact_id, retries, pendencies, exact_match, message_confirmed=False, ticket_closed=False, client_needs_help=False):
+def process_input(sentence: str, contact_id: str, retries, pendencies: bool, exact_match, message_confirmed=False, ticket_closed=False, client_needs_help=False):
     if (message_confirmed and ticket_closed and not client_needs_help) or message_confirmed and not client_needs_help:
-        teste = f"message_confirmed: {ticket_closed} - ticket_closed: {ticket_closed} - needs_help: {client_needs_help}"
         send_message(
-            contact_id, text=f"Esse canal é apenas para o envio de documentos.\nDeseja falar com um atendente?\n{teste}")
+            contact_id, text=f"Esse canal é apenas para o envio de documentos.\nDeseja falar com um atendente? (Sim / Não)")
         switch_client_needs_help.apply_async(args=[contact_id, True])
         return "Mensagem não esperada. Troca de canal enviada"
 
@@ -60,11 +59,12 @@ def process_input(sentence, contact_id, retries, pendencies, exact_match, messag
         elif is_match(sentence, NEGATIVE_RESPONSES, exact_match):
             send_message(
                 contact_id, text="Tudo bem! Caso necessite de mais alguma coisa, não hesite em nos perguntar!")
+            switch_client_needs_help.apply_async(args=[contact_id, False])
             confirm_message.apply_async(args=[contact_id])
             return "Atendimento inesperado encerrado com sucesso! Cliente não quis atendente"
         else:
             send_message(
-                contact_id, text="Este canal é para documentos, se precisar de um atendente informe por gentileza")
+                contact_id, text="Este canal é para documentos, se precisar de um atendente informe por gentileza (Sim/Não)")
             ticket_message = close_ticket.apply_async(
                 args=[contact_id], countdown=60)
             return "Dúvida. resposta indefinida: não disse explicitamente se quer atendente"
@@ -74,8 +74,7 @@ def process_input(sentence, contact_id, retries, pendencies, exact_match, messag
             send_message(
                 contact_id, text="Vou enviar os arquivos agora mesmo!")
             get_contact_pendencies_and_send.apply_async(args=[contact_id])
-            confirm_message.apply_async(args=[contact_id], kwargs={
-                                        "close_ticket": False})
+            confirm_message.apply_async(args=[contact_id])
             return "Cliente solicitou os arquivos"
         else:
             send_message(contact_id, text="Obrigado por confirmar!")
@@ -279,16 +278,20 @@ def init_app(request):
 
         pendencies_list = get_pendencies(contact.contact_id)
         pendencies_list = pendencies_list[:5]
+        # pendencies_list = None
         file = request.data.get('pdf')
-        pendencies_text = [
-            pendencies.period.strftime("%B/%Y") for pendencies in pendencies_list
-        ]
-        pendencies_message = get_pendencies_text(", ".join(pendencies_text))
 
         send_message(contact_teste.contact_id, text=saudacao)
         send_message(contact_teste.contact_id, file=file)
 
         if pendencies_list:
+            pendencies_text = [
+                pendencies.period.strftime("%B/%Y") for pendencies in pendencies_list
+            ]
+            pendencies_message = get_pendencies_text(
+                ", ".join(pendencies_text)
+            )
+
             send_message(contact_teste.contact_id, text=pendencies_message)
             update_ticket_control_pendencies.apply_async(
                 args=[contact_teste.contact_id, True])
@@ -307,7 +310,7 @@ def get_contact_pendencies_and_send(contact_id):
         contact2 = get_contact(contact_id)
         contact = get_contact("a8f7d632-6441-427a-8210-aea66effa35d")
         pendencies_list = contact.get_pendencies()
-        pendencies_list = pendencies_list[:5]
+        # pendencies_list = pendencies_list[:5]
 
         if len(pendencies_list) > 5:
             send_message(
