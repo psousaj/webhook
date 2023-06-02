@@ -13,10 +13,11 @@ from webhook.logger import Logger
 from webhook.get_objects import get_pendencies
 from control.models import MessageControl
 from control.text import saudacao, disclaimer, get_pendencies_text
-
+from control import pendencies as pendencie_test
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+
 
 logger = Logger(__name__)
 
@@ -69,12 +70,14 @@ def process_input(sentence: str, contact_id: str, retries, pendencies: bool, exa
                 args=[contact_id], countdown=60)
             return "Dúvida. resposta indefinida: não disse explicitamente se quer atendente"
 
-    if is_match(sentence, POSITIVE_RESPONSES, exact_match) and not message_confirmed:
+    if is_match(sentence, POSITIVE_RESPONSES, exact_match) and not message_confirmed and not is_match(sentence, NEGATIVE_RESPONSES, exact_match):
         if pendencies:
             send_message(
                 contact_id, text="Vou enviar os arquivos agora mesmo!")
-            get_contact_pendencies_and_send.apply_async(args=[contact_id])
-            confirm_message.apply_async(args=[contact_id])
+            get_contact_pendencies_and_send.apply_async(args=[contact_id], kwargs={
+                                                        "pendencies_test_quantity": pendencie_test.get_pendencias()})
+            confirm_message.apply_async(
+                args=[contact_id], kwargs={"closeTicket": False})
             return "Cliente solicitou os arquivos"
         else:
             send_message(contact_id, text="Obrigado por confirmar!")
@@ -274,15 +277,19 @@ def send_message(contact_id, text="", file=None):
 def init_app(request):
     try:
         contact = get_any_contact(cnpj=request.query_params.get('cnpj'))
-        contact_teste = get_any_contact(cnpj='12345678')
-
-        pendencies_list = get_pendencies(contact.contact_id)
-        pendencies_list = pendencies_list[:5]
-        # pendencies_list = None
         file = request.data.get('pdf')
+        pendencies_list = get_pendencies(contact.contact_id)
+        reduce = request.query_params.get('reduce')
+        if reduce:
+            reduce = int(reduce)
+            if reduce == 0:
+                pendencies_list = None
 
-        send_message(contact_teste.contact_id, text=saudacao)
-        send_message(contact_teste.contact_id, file=file)
+            pendencies_list = pendencies_list[:reduce]
+            pendencie_test.set_pendencias(reduce)
+
+        send_message(contact.contact_id, text=saudacao)
+        send_message(contact.contact_id, file=file)
 
         if pendencies_list:
             pendencies_text = [
@@ -292,11 +299,11 @@ def init_app(request):
                 ", ".join(pendencies_text)
             )
 
-            send_message(contact_teste.contact_id, text=pendencies_message)
+            send_message(contact.contact_id, text=pendencies_message)
             update_ticket_control_pendencies.apply_async(
-                args=[contact_teste.contact_id, True])
+                args=[contact.contact_id, True])
         else:
-            send_message(contact_teste.contact_id, text=disclaimer)
+            send_message(contact.contact_id, text=disclaimer)
 
         return Response({'success': 'message_sent'})
     except Exception as e:
@@ -305,25 +312,26 @@ def init_app(request):
 
 
 @shared_task(name='send-pendencies')
-def get_contact_pendencies_and_send(contact_id):
+def get_contact_pendencies_and_send(contact_id, pendencies_test_quantity=0):
     try:
-        contact2 = get_contact(contact_id)
-        contact = get_contact("a8f7d632-6441-427a-8210-aea66effa35d")
+        contact = get_contact(contact_id)
         pendencies_list = contact.get_pendencies()
-        # pendencies_list = pendencies_list[:5]
+
+        if pendencies_test_quantity:
+            pendencies_list = pendencies_list[:pendencies_test_quantity]
 
         if len(pendencies_list) > 5:
             send_message(
-                contact2.contact_id,
+                contact.contact_id,
                 text=f"Número de pendencias({len(pendencies_list)}) maior que 5, te encaminhei para um atendente.\nAguarde que logo entraremos em contato"
             )
-            transfer_ticket.apply_async(args=[contact2.contact_id], kwargs={
+            transfer_ticket.apply_async(args=[contact.contact_id], kwargs={
                                         "motivo": f"Número de pendencias DAS({len(pendencies_list)}) maior que 5"})
             return "número de pendencias maior que 5, atendente solicitado"
 
         for pendencie in pendencies_list:
             competence = pendencie.period.strftime("%B/%m")
-            send_files(contact2.contact_id, competence, pendencie.pdf)
+            send_files(contact.contact_id, competence, pendencie.pdf)
 
         close_ticket.apply_async(args=[contact_id])
         return "pendencias enviadas ao cliente com sucesso"

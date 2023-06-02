@@ -12,7 +12,7 @@ logger = Logger(__name__)
 
 def get_event_status(event, message_id: str = None, ticket_id: str = None) -> int:
     if event == 'ticket':
-        url = f"{os.getenv('WEBHOOK_API')}/messages/tickets/status"
+        url = f"{os.environ.get('WEBHOOK_API', os.getenv('WEBHOOK_API'))}/messages/tickets/status"
         response = requests.get(
             url, params={"id": ticket_id})
 
@@ -26,7 +26,7 @@ def get_event_status(event, message_id: str = None, ticket_id: str = None) -> in
             return False
     try:
         if event == 'message':
-            url = f"{os.getenv('WEBHOOK_API')}/messages/list"
+            url = f"{os.environ.get('WEBHOOK_API', os.getenv('WEBHOOK_API'))}/messages/list"
             response = requests.get(url, params={"id": message_id})
 
             if response.status_code == 200:
@@ -132,7 +132,7 @@ def message_exists_in_digisac(message_id):
 
 
 def message_is_saved(message_id):
-    url = f"{os.environ.get('WEBHOOK_API')}/messages/list"
+    url = f"{os.environ.get('WEBHOOK_API', os.getenv('WEBHOOK_API'))}/messages/list"
     response = requests.get(url, params={"id": message_id})
 
     if response.status_code != 200:
@@ -209,7 +209,7 @@ def handle_message_updated(self, message_id: str, data):
             'message', message_id=message_id) if not None else 0
         status = int(extract_value(data['data']['data']['ack'])),
         if actual_status < extract_value(status):
-            url = f"{os.getenv('WEBHOOK_API')}/messages/update"
+            url = f"{os.environ.get('WEBHOOK_API', os.getenv('WEBHOOK_API'))}/messages/update"
             response = requests.patch(
                 url, params={'id': message_id, 'status': extract_value(status)})
 
@@ -234,7 +234,7 @@ def handle_message_updated(self, message_id: str, data):
 
 @shared_task(name='create_ticket', retry_backoff=True, max_retry=3)
 def handle_ticket_created(ticket_id: str, contact_id, last_message_id):
-    url = f'{os.getenv("WEBHOOK_API")}/messages/create/ticket'
+    url = f'{os.environ.get("WEBHOOK_API", os.getenv("WEBHOOK_API"))}/messages/create/ticket'
     params = {
         "id": ticket_id,
         "period": get_current_period(),
@@ -259,7 +259,7 @@ def handle_ticket_updated(ticket_id: str, data):
         is_open = bool(extract_value(data['data']['isOpen']))
         last_message_id = extract_value(data['data']['lastMessageId'])
         if actual_status and not is_open:
-            url = f"{os.getenv('WEBHOOK_API')}/messages/update/ticket?id={ticket_id}&open=0&last_message={last_message_id}"
+            url = f"{os.environ.get('WEBHOOK_API', os.getenv('WEBHOOK_API'))}/messages/update/ticket?id={ticket_id}&open=0&last_message={last_message_id}"
             response = requests.patch(url)
 
             if response.status_code in range(400, 404):
