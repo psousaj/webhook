@@ -27,7 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-=cldztbc4jg&xl0!x673!*v2_=p$$eu)=7*f#d0#zs$44xx-h^'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 APPEND_SLASH = False
@@ -97,9 +97,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'neondb',
-        'USER': os.environ.get('DB_USER', os.getenv('DB_USER')),
-        'PASSWORD': os.environ.get('DB_PASS', os.getenv('DB_PASS')),
-        'HOST': os.environ.get('DB_HOST', os.getenv('DB_HOST')),
+        'USER': os.environ.get('DB_USER_TAX', os.getenv('DB_USER_TAX')),
+        'PASSWORD': os.environ.get('DB_PASS_TAX', os.getenv('DB_PASS_TAX')),
+        'HOST': os.environ.get('DB_HOST_TAX', os.getenv('DB_HOST_TAX')),
         'PORT': '5432',
     }
 }
@@ -133,7 +133,7 @@ TIME_ZONE = 'America/Sao_Paulo'
 
 USE_I18N = True
 
-USE_TZ = True
+# USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)

@@ -3,7 +3,7 @@ from django.db import models
 
 class Ticket(models.Model):
     ticket_id = models.CharField(max_length=255, primary_key=True)
-    period = models.CharField()
+    period = models.DateField()
     is_open = models.BooleanField(default=True)
     contact_id = models.CharField(max_length=255)
     last_message_id = models.CharField(
@@ -15,7 +15,6 @@ class Message(models.Model):
     contact_id = models.CharField(max_length=255, null=False)
     contact_number = models.CharField(max_length=255, null=False)
     period = models.DateField()
-    timestamp = models.DateTimeField(default=None)
     status = models.IntegerField(
         choices=((0, 'Criada'), (1, 'Enviada'), (2, 'Recebida'), (3, 'Visualizada')))
     ticket = models.ForeignKey(

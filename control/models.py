@@ -13,7 +13,7 @@ class MessageControl(models.Model):
         Ticket, on_delete=models.CASCADE, related_name="ticket")
     pendencies = models.BooleanField(default=False)
     contact = models.CharField(max_length=255)
-    period = models.CharField()
+    period = models.DateField()
     status = models.IntegerField(
         choices=[(0, 'Aguardando Resposta'), (1, 'Fechado')], default=0)
     client_needs_help = models.BooleanField(default=False)
@@ -66,6 +66,9 @@ class MessageControl(models.Model):
             return ticket_link
         except TicketLink.DoesNotExist:
             return None
+
+    def __str__(self) -> str:
+        return f"{self.contact_number} - {self.cnpj} - {self.period}"
 
 
 class TicketLink(models.Model):

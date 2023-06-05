@@ -117,7 +117,7 @@ class MessageViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         contact_number = request.query_params.get('phone')
         period = request.query_params.get('period')
-        timestamp = request.data.get('timestamp')
+        # timestamp = request.data.get('timestamp')
         contact_id = request.data.get('contact_id')
         status = request.data.get('status')
         message_id = request.data.get('message_id')
@@ -164,7 +164,7 @@ class MessageViewSet(viewsets.ModelViewSet):
                 contact_id=contact_id,
                 contact_number=contact_number,
                 period=period,
-                timestamp=timestamp,
+                # timestamp=timestamp,
                 status=status,
                 message_id=message_id,
                 ticket=ticket,
