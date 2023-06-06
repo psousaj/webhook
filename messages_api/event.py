@@ -156,6 +156,7 @@ def handle_message_created(data, isFromMe: bool):
     date = get_current_period()
     number = get_phone_number(contact_id)
     parameters = {"phone": number, "period": date}
+    message_type = data.get("data").get("type")
     message_body = {
         "message_id": data['data']['id'],
         "contact_id": contact_id,
@@ -164,7 +165,7 @@ def handle_message_created(data, isFromMe: bool):
         "ticket": data['data']['ticketId'],
         "message_type": data['data']['type'],
         "is_from_me": isFromMe,
-        "text": data['data']['text']
+        "text": data['data']['text'] if data['data']['text'] else f"{message_type}"
     }
 
     if number is None:
