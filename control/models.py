@@ -68,7 +68,7 @@ class MessageControl(models.Model):
             return None
 
     def __str__(self) -> str:
-        return f"{self.contact_number} - {self.cnpj} - {self.period}"
+        return f"{self.contact} - {self.period}"
 
 
 class TicketLink(models.Model):

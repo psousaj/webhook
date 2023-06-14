@@ -58,10 +58,10 @@ class ContactViewSet(viewsets.ModelViewSet):
                 contact_number=contact_number
             )
         except (IntegrityError, TypeError) as e:
-            error_code, error_msg = e.args
-            text = str(error_msg)
+            # error_code, error_msg = e.args
+            text = str(e)
             logger.debug(f"{text}")
-            return Response({f"error {error_code}": "Something Wrong", "message": text}, status=409)
+            return Response({f"error {text}": "Something Wrong", "message": text}, status=409)
 
         # obligation_control =
         serializer = ContactSerializer(contact)

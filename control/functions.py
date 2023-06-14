@@ -24,6 +24,7 @@ logger = Logger(__name__)
 POSITIVE_RESPONSES = r"\b(sim|bacana|ok|tá|ta|bom|recebi|receb|na\shora|ótimo|beleza|blz|entendi|show|confirmado|confirme|tá\sótimo|massa|s|manda|mande|envia|pode|👍|👍🏾|👍🏻|👍🏼|👍🏿|pode\sser)\b"
 NEGATIVE_RESPONSES = r"\b(n|nao|pare|parar|stop|não|\?|nada)\b"
 ASSISTANCE_REQUESTS = r"\b(atendente|humano|pessoa|atendimento|atedente|sair|porque|Porque|Por que|por que|Por quê)\b"
+NOT_CHAT_TYPES = r"\b(image|document|sticker)\b"
 
 
 def format_responses(responses):
@@ -89,6 +90,11 @@ def process_input(sentence: str, contact_id: str, retries, pendencies: bool, exa
             contact_id, text="Tudo bem! Caso necessite de mais alguma coisa, não hesite em nos perguntar!")
         confirm_message.apply_async(args=[contact_id])
         return "Atendimento Encerrado com sucesso! Cliente não quis o boleto"
+
+    if is_match(sentence, NOT_CHAT_TYPES, exact_match=True):
+        send_message(
+            contact_id, text="Obrigado! Ainda preciso que me responda SIM, OK, ou RECEBI para finalizar o atendimento")
+        return "Recebi um documento, imagem ou figurinha"
 
     if is_match(sentence, ASSISTANCE_REQUESTS, exact_match) or retries >= 3 and not ticket_closed:
         send_message(

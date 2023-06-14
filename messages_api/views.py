@@ -1,4 +1,5 @@
 from datetime import datetime as dt
+import time
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
@@ -226,6 +227,15 @@ def update_message(request: HttpRequest):
         return Response({'error': 400, 'message': str(e)}, status=400)
 
 
+def get_valid_ticket(ticket_id):
+    while True:
+        try:
+            ticket = get_object_or_404(Ticket, ticket_id=ticket_id)
+            return ticket
+        except Http404:
+            time.sleep(1)
+
+
 class TicketViewSet(viewsets.ModelViewSet):
     # queryset = Ticket.objects.all()
     serializer_class = TicketSerializer
@@ -311,7 +321,7 @@ class TicketViewSet(viewsets.ModelViewSet):
 
     def up_ticket(self, request, ticket_id, is_open, last_message_id):
         try:
-            message = Ticket.objects.get(ticket_id=ticket_id)
+            message = get_valid_ticket(ticket_id)
             if message:
                 serializer = TicketSerializer(message)
                 serializer = TicketSerializer(
@@ -357,6 +367,6 @@ def update_ticket(request: HttpRequest):
 @api_view(['GET'])
 def get_status(request: HttpRequest):
     id = request.query_params.get('id')
-    view = TicketViewSet
+    view = TicketViewSet()
 
     return view.status(id)
