@@ -7,7 +7,7 @@ from rest_framework.response import Response
 
 from contacts.serializer import ContactSerializer
 from contacts.models import Contact
-from webhook.logger import Logger
+from webhook.utils.logger import Logger
 # Create your views here.
 
 logger = Logger(__name__)

@@ -2,7 +2,7 @@ import os
 from httpx import Client, get
 from dotenv import load_dotenv
 
-from webhook.logger import Logger
+from webhook.utils.logger import Logger
 
 load_dotenv()
 logger = Logger(__name__)

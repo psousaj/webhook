@@ -6,7 +6,7 @@ from django.http.request import HttpRequest
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
-from webhook.logger import Logger
+from webhook.utils.logger import Logger
 from messages_api import event
 
 logger = Logger(__name__)
@@ -15,11 +15,8 @@ logger = Logger(__name__)
 @api_view(['POST'])
 def webhook_receiver(request: HttpRequest):
     data = json.loads(request.body) if request.body else {}
-    # logger.info(f"Received webhook request\n{data}")
     try:
         event.manage(data)
-        # with open(f'messages/message{data["timestamp"]}.json', 'w') as f:
-        #     json.dump(data, f)
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         filename = inspect.getframeinfo(exc_tb.tb_frame).filename
@@ -39,7 +36,6 @@ def webhook_receiver(request: HttpRequest):
                 f"Linha: {line_number}, Código: {line_text}")
 
         logger.info(f"Exception occurred. {e}")
-    # verify_messager.verify(data)
     return Response(
         {
             "code": "201",

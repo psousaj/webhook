@@ -13,14 +13,14 @@ class Logger:
         self.console_handler.setLevel(logging.DEBUG)
 
         # Criando um handler para o log em arquivo de texto
-        self.file_handler = logging.FileHandler('webhook_log.txt')
-        self.file_handler.setLevel(logging.DEBUG)
+        # self.file_handler = logging.FileHandler('webhook_log.txt')
+        # self.file_handler.setLevel(logging.DEBUG)
 
         # Definindo o formato das mensagens de log
         formatter = logging.Formatter(
             '%(asctime)s - %(name)s -%(levelname)s- %(message)s', datefmt='%d/%m/%Y|%H:%M:%S')
         self.console_handler.setFormatter(formatter)
-        self.file_handler.setFormatter(formatter)
+        # self.file_handler.setFormatter(formatter)
 
         # Adicionando os handlers ao logger
         self.logger.addHandler(self.console_handler)
@@ -36,7 +36,7 @@ class Logger:
         self.logger.warning(msg, *args, **kwargs)
 
     def error(self, msg, *args, **kwargs):
-        self.logger.error(msg, *args, *kwargs)
+        self.logger.error(msg, *args, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
-        self.logger.critical(msg, *args, *kwargs)
+        self.logger.critical(msg, *args, **kwargs)

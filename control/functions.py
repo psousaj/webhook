@@ -6,11 +6,11 @@ from datetime import datetime as dt
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 
-from messages_api.event import get_current_period, get_phone_number
-from contacts.get_objects import get_contact, get_any_contact
-from webhook.request import any_request
-from webhook.logger import Logger
-from webhook.get_objects import get_pendencies
+from messages_api.event import get_current_period, get_contact_number
+from webhook.utils.get_objects import get_contact
+from webhook.utils.request import any_request
+from webhook.utils.logger import Logger
+from webhook.utils.get_objects import get_contact_object
 from control.models import MessageControl
 from control.text import saudacao, disclaimer, get_pendencies_text
 from control import pendencies as pendencie_test
@@ -144,7 +144,7 @@ def switch_client_needs_help(contact_id, boolean):
 @shared_task(bind=True, name='check_response', retry_backoff=True, max_retries=3)
 def check_client_response(self, contact_id):
     try:
-        contact_number = get_phone_number(contact_id, only_number=True)
+        contact_number = get_contact_number(contact_id, only_number=True)
         period = dt.strptime(
             get_current_period(),
             "%m/%y"
@@ -202,7 +202,7 @@ def close_ticket(contact_id):
 
 @shared_task(name='confirm-message')
 def confirm_message(contact_id, closeTicket=True, timeout=120):
-    contact_number = get_phone_number(contact_id, only_number=True)
+    contact_number = get_contact_number(contact_id, only_number=True)
     period = dt.strptime(get_current_period(),
                          "%m/%y").strftime('%Y-%m-%d')
     control = get_object_or_404(
@@ -234,7 +234,7 @@ def transfer_ticket(contact_id, motivo=None):
 
 def get_control_object(contact_id):
     try:
-        contact_number = get_phone_number(contact_id, only_number=True)
+        contact_number = get_contact_number(contact_id, only_number=True)
         period = dt.strptime(get_current_period(),
                              "%m/%y").strftime('%Y-%m-%d')
         control = get_object_or_404(
@@ -282,9 +282,9 @@ def send_message(contact_id, text="", file=None):
 @api_view(['GET'])
 def init_app(request):
     try:
-        contact = get_any_contact(cnpj=request.query_params.get('cnpj'))
+        contact = get_contact(cnpj=request.query_params.get('cnpj'))
         file = request.data.get('pdf')
-        pendencies_list = get_pendencies(contact.contact_id)
+        pendencies_list = get_contact_object(contact.contact_id)
         reduce = request.query_params.get('reduce')
         if reduce:
             reduce = int(reduce)
@@ -371,7 +371,7 @@ def check_client_response_viewset(request):
 @api_view(['GET'])
 def transfer_ticket_viewset(request):
     cnpj = request.query_params.get('cnpj')
-    contact = get_any_contact(cnpj=cnpj)
+    contact = get_contact(cnpj=cnpj)
 
     transfer_ticket.apply_async(args=[contact.contact_id])
 

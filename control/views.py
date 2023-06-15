@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from contacts.serializer import PendenciesSerializer
 
-from webhook.logger import Logger
+from webhook.utils.logger import Logger
 from messages_api.models import Ticket
 from contacts.get_objects import get_any_contact
 from contacts.models import Pendencies

@@ -1,7 +1,7 @@
 from django.db import models
 
 from messages_api.models import Ticket, Message
-from webhook.request import any_request
+from webhook.utils.request import any_request
 # Create your models here.
 
 
