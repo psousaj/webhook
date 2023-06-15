@@ -9,7 +9,7 @@ from webhook.utils.get_objects import get_contact, get_ticket, get_message
 
 
 logger = Logger(__name__)
-
+WEBHOOK_API = os.environ.get("WEBHOOK_API", os.getenv("WEBHOOK_API"))
 
 def get_event_status(event, message_id: str = None, ticket_id: str = None):
     if event == 'ticket':
@@ -19,13 +19,6 @@ def get_event_status(event, message_id: str = None, ticket_id: str = None):
     if event == 'message':
         message = get_message(message_id=message_id)
         return message.status if message else 0
-
-#TO DO DELETE THIS
-def extract_value(input_list):
-    if (isinstance(input_list, list) or isinstance(input_list, tuple)):
-        return input_list[0]
-
-    return input_list
 
 
 def get_contact_number(contact_id: str, only_number=False):
@@ -110,24 +103,25 @@ def handle_message_created(message_id, isFromMe, data=...):
     message_saved = message_is_saved(message_id=message_id)
 
     if message_exists and message_saved:
-        handle_message_updated.apply_async(args=[message_id, data])
+        handle_message_updated.apply_async(args=[message_id], kwargs={"data":data})
         return "Mensagem já existe mandada pra atualização"
 
-    url = f"{os.environ.get('WEBHOOK_API', os.getenv('WEBHOOK_API'))}/messages/create"
+    url = f"{WEBHOOK_API}/messages/create"
+
     contact_id = data.get('contactId')
     date = get_current_period()
     number = get_contact_number(contact_id=contact_id)
     parameters = {"phone": number, "period": date}
-    message_type = data.get("data").get("type")
+    message_type = data.get("type")
     message_body = {
-        "message_id": data['data']['id'],
+        "message_id": message_id,
         "contact_id": contact_id,
-        "timestamp": data['timestamp'],
-        "status": data['data']['data']['ack'],
-        "ticket": data['data']['ticketId'],
-        "message_type": data['data']['type'],
+        "timestamp": data.get('timestamp'),
+        "status": data['data'].get('ack'),
+        "ticket": data.get('ticketId'),
+        "message_type": data.get('type'),
         "is_from_me": isFromMe,
-        "text": data['data'].get("text", message_type)
+        "text": data.get("text", message_type)
     }
 
     if number is None:
@@ -136,20 +130,19 @@ def handle_message_created(message_id, isFromMe, data=...):
     # if not isFromMe:
     response = requests.post(url, json=message_body, params=parameters)
 
-    uṕdate_ticket_last_message(
-        ticket_id=extract_value(data['data']['ticketId']))
+    uṕdate_ticket_last_message(ticket_id=data.get('ticketId'))
 
     if not isFromMe and not response.status_code in range(400, 501):
-        check_url = f'{os.environ.get("WEBHOOK_API", os.getenv("WEBHOOK_API"))}/control/check_response'
+        check_url = f'{WEBHOOK_API}/control/check_response'
         requests.get(check_url, params={"contact_id": contact_id})
 
     if response.status_code == 409:
-        logger.debug(f'{response} - {response.text}')
+        # logger.debug(f'{response} - {response.text}')
         return "Esta mensagem já existe por algum motivo chegou até aqui novamente. Verifique os logs"
 
     if response.status_code != 201:
-        text = f"Failed to create message_id: {data['data']['id']}\n{response}-\n{response.text}"
-        logger.debug(text)
+        text = f"Failed to create message_id: {message_id}\n{response}-\n{response.text}"
+        # logger.debug(text)
         raise ValueError(text)
 
     return response
@@ -159,39 +152,36 @@ def handle_message_created(message_id, isFromMe, data=...):
 def handle_message_updated(message_id, data=...):
     if not message_id:
         return "Message vazio. diabo é isso?"
+    
     message_exists = message_exists_in_digisac(message_id=message_id)
     message_saved = message_is_saved(message_id)
 
     if message_exists and not message_saved:
-        handle_message_created.apply_async(
-            args=[data, extract_value(data['data']['isFromMe'])])
-
+        handle_message_created.apply_async(args=[message_id, data.get('isFromMe')], kwargs={"data":data})
         return "Mensagem existe e não foi salva antes"
     try:
-        actual_status = get_event_status(
-            'message', message_id=message_id) if not None else 0
-        status = int(extract_value(data['data']['data']['ack'])),
-        if actual_status < extract_value(status):
-            url = f"{os.environ.get('WEBHOOK_API', os.getenv('WEBHOOK_API'))}/messages/update"
-            response = requests.patch(
-                url, params={'id': message_id, 'status': extract_value(status)})
+        message = get_message(message_id=message_id)
+        actual_status = get_event_status('message', message_id=message_id)
+        status = int(data['data'].get('ack')),
+        if actual_status < status:
+            # url = f"{WEBHOOK_API}/messages/update"
+            # response = requests.patch(url, params={'id': message_id, 'status': status})
 
-            if response.status_code != 200:
-                text = f"{response}-{response.text}"
-                logger.debug(text)
-
-                raise Exception(f"{text} - {status}")
+            if message:
+                message.status = status
+                message.save()
         else:
             return f"Status:{status} menor que o atual da mensagem com id: {message_id}"
+        
     except Exception as e:
         logger.debug(e)
 
-    return response
+    return "Mensagem atualizada com sucesso" 
 
 
 @shared_task(name='create_ticket', retry_backoff=True, max_retry=3)
 def handle_ticket_created(ticket_id, contact_id, last_message_id):
-    url = f'{os.environ.get("WEBHOOK_API", os.getenv("WEBHOOK_API"))}/messages/create/ticket'
+    url = f'{WEBHOOK_API}/messages/create/ticket'
     params = {
         "id": ticket_id,
         "period": get_current_period(),
@@ -213,8 +203,8 @@ def handle_ticket_updated(ticket_id, data=...):
 
     try:
         actual_status = get_event_status('ticket', ticket_id=ticket_id)
-        is_open = bool(extract_value(data['data']['isOpen']))
-        last_message_id = extract_value(data['data']['lastMessageId'])
+        is_open = bool((data['data']['isOpen']))
+        last_message_id = (data['data']['lastMessageId'])
         if actual_status and not is_open:
             url = f"{os.environ.get('WEBHOOK_API', os.getenv('WEBHOOK_API'))}/messages/update/ticket?id={ticket_id}&open=0&last_message={last_message_id}"
             response = requests.patch(url)
