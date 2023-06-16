@@ -1,9 +1,12 @@
 import inspect
 import json
+import os
+import random
 import sys
 import traceback
 from django.http.request import HttpRequest
 from rest_framework.response import Response
+from django.http.response import JsonResponse, HttpResponseRedirect
 from rest_framework.decorators import api_view
 
 from webhook.logger import Logger
@@ -46,3 +49,17 @@ def webhook_receiver(request: HttpRequest):
             "message": "Webhook received a request",
             "data": [data]
         }, status=201)
+
+@api_view(['POST'])
+def webhook_avaliation(request:HttpRequest):
+    data = json.loads(request.body) if request.body else {}
+
+    base_path = f'json/{data.get("event")}'
+
+    if not os.path.exists(base_path):
+        os.makedirs(base_path)
+
+    with open(f'{base_path}/json_file{random.randint(0, 100)}.json', 'w') as f:
+        json.dump(data, f)
+
+    return JsonResponse(data)
