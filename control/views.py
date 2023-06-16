@@ -10,13 +10,14 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from contacts.serializer import PendenciesSerializer
 
-from webhook.utils.logger import Logger
+from webhook.utils.tools import Logger
 from messages_api.models import Ticket
-from contacts.get_objects import get_any_contact
 from contacts.models import Pendencies
 from control.models import MessageControl
 from control.serializer import ControlMessageSerializer
 from control.functions import send_message
+
+from webhook.utils.get_objects import get_contact
 
 # Create your views here.
 logger = Logger(__name__)
@@ -146,7 +147,7 @@ def create_pendencies_viewset(request: HttpRequest):
     except ValueError:
         return Response({"error": "Invalid date format. It should be YYYY-MM-DD."}, status=400)
 
-    contact = get_any_contact(cnpj=cnpj)
+    contact = get_contact(cnpj=cnpj)
     if contact is None:
         return Response({"error": f"No contact found with cnpj: {cnpj}"}, status=404)
 

@@ -14,8 +14,7 @@ class MessageControl(models.Model):
     pendencies = models.BooleanField(default=False)
     contact = models.CharField(max_length=255)
     period = models.DateField()
-    status = models.IntegerField(
-        choices=[(0, 'Aguardando Resposta'), (1, 'Fechado')], default=0)
+    status = models.IntegerField(choices=[(0, 'Aguardando Resposta'), (1, 'Fechado')], default=0)
     client_needs_help = models.BooleanField(default=False)
     retries = models.IntegerField(default=1)
 

@@ -1,5 +1,8 @@
 import logging
+from datetime import datetime as dt
 
+
+__all__=["get_contact_number", "get_current_period", "Logger"]
 
 class Logger:
 
@@ -40,3 +43,22 @@ class Logger:
 
     def critical(self, msg, *args, **kwargs):
         self.logger.critical(msg, *args, **kwargs)
+
+def get_contact_number(contact_id: str, only_number=False):
+    from webhook.utils.get_objects import get_contact
+    contact = get_contact(contact_id=contact_id)
+
+    if contact:
+        if not only_number:
+            return f"{contact.country_code}{contact.ddd}{contact.contact_number}"
+        else:
+            return f"{contact.contact_number}"
+
+    return None
+
+def get_current_period(file_name=False) -> str:
+    if file_name:
+        return dt.today().strftime('%B/%Y').capitalize()
+
+    return dt.today().strftime('%m/%y')
+
