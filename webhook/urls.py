@@ -17,12 +17,13 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from webhook.views import webhook_receiver
+from webhook.views import webhook_receiver, webhook_avaliation
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('example.urls')),
     path('webhook', webhook_receiver, name='webhook'),
+    path('webhook/avaliations', webhook_avaliation, name='webhook_avaliation'),
     path('webhook/messages', include('messages_api.urls')),
     path('webhook/contacts', include('contacts.urls')),
     path('webhook/control', include('control.urls')),
