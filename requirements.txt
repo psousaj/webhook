@@ -19,3 +19,4 @@ psycopg==3.1.9
 whitenoise==6.4.0
 gevent==22.10.2
 dynoscale==1.2.2
+rocketry==2.5.1
