@@ -21,6 +21,10 @@ class Answers(Enum):
     NOT_TEXT_MESSAGE_RECEIVED = "Obrigado! Ainda preciso que me responda SIM, OK, ou RECEBI para finalizar o atendimento"
     ASK_ASSISTANCE = "Tudo bem! Em instantes um de nossos atendentes entrará em contato!"
     MORE_THAN_FIVE_PENDENCIES = "Número de pendencias({REPLACE}) maior que 5, te encaminhei para um atendente.\nAguarde que logo entraremos em contato"
+    BASE_ERROR_MESSAGE = "\nDesculpe, não entendi. Por favor, responda SIM, OK ou "
+    HAS_DEBITS_ERROR_COMPLETION = "NÃO caso não queira os boletos agora."
+    NO_DEBIT_ERROR_COMPLETION = "RECEBI."
+    ATTENDANT_ERROR_COMPLETION = '\nSe precisar falar com um de nossos atendentes digite "atendente"'
 
     @classmethod
     def get_text_with_replace(cls, atrib='MORE_THAN_FIVE_PENDENCIES', param=None):

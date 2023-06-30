@@ -54,7 +54,7 @@ def process_input(sentence: str, contact_id: str, retries:int, pendencies: bool,
         if is_match(sentence, POSITIVE_RESPONSES, exact_match) and not is_match(sentence, NEGATIVE_RESPONSES, exact_match):
             transfer_ticket.apply_async(args=[contact_id], kwargs={"motivo": Reasons.ASK_FOR_ATTENDANT.value})
             send_message(contact_id, text=Answers.ASK_FOR_ATTENDANT.value)
-            ticket_message = close_ticket.apply_async(args=[contact_id], countdown=60)
+            ticket_message = close_ticket.apply_async(args=[contact_id], countdown=30)
             switch_client_needs_help.apply_async(args=[contact_id, False])
 
             return f"Troca de canal enviada e {ticket_message}"
@@ -114,14 +114,14 @@ def process_input(sentence: str, contact_id: str, retries:int, pendencies: bool,
 
 
 def generate_error_message(retries, pendencies) -> str:
-    base_message = "\nDesculpe, não entendi. Por favor, responda SIM, OK ou "
+    base_message = Answers.BASE_ERROR_MESSAGE.value
     if pendencies:
-        base_message += "NÃO caso não queira os boletos agora."
+        base_message += Answers.HAS_DEBITS_ERROR_COMPLETION.value
     else:
-        base_message += "RECEBI."
+        base_message += Answers.NO_DEBIT_ERROR_COMPLETION.value
 
     if retries >= 2:
-        base_message += '\nSe precisar falar com um de nossos atendentes digite "atendente"'
+        base_message += Answers.ATTENDANT_ERROR_COMPLETION.value
 
     return base_message
 
@@ -178,7 +178,7 @@ def close_ticket(contact_id):
     return f"Erro na requisição - {response.text}"
 
 @shared_task(name='confirm-message')
-def confirm_message(contact_id, closeTicket=True, timeout=60):
+def confirm_message(contact_id, closeTicket=True, timeout=30):
     control = get_control_object(contact_id=contact_id)
 
     # Fechar Control:

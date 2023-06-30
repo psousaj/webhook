@@ -35,7 +35,7 @@ HEROKU_APP_NAME = 'woz'
 DYNO_NAME = ['worker.1', 'web.1']
 ALLOWED_DYNO_STATES = ['starting', 'up']
 NOT_ALLOWED_DYNO_STATES = ['crashed', 'down', 'idle']
-CHECK_STATE_INTERVAL = every("5 minutes") & time_of_day.between("08:00", "21:00")
+CHECK_STATE_INTERVAL = every("2 minutes") & time_of_day.between("08:00", "21:00")
 WEBHOOK_SEND_REPORT_URL = f'{load_env("WEBHOOK_API")}/control/report/send-message'
 
 client_request_header = {
