@@ -1,7 +1,7 @@
 from django.db import models
 
 from messages_api.models import Ticket, Message
-from webhook.request import any_request
+from webhook.utils.request import any_request
 # Create your models here.
 
 
@@ -14,8 +14,7 @@ class MessageControl(models.Model):
     pendencies = models.BooleanField(default=False)
     contact = models.CharField(max_length=255)
     period = models.DateField()
-    status = models.IntegerField(
-        choices=[(0, 'Aguardando Resposta'), (1, 'Fechado')], default=0)
+    status = models.IntegerField(choices=[(0, 'Aguardando Resposta'), (1, 'Fechado')], default=0)
     client_needs_help = models.BooleanField(default=False)
     retries = models.IntegerField(default=1)
 

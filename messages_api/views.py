@@ -8,9 +8,9 @@ from django.http.request import HttpRequest
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
-from webhook.logger import Logger
+from webhook.utils.tools import Logger
 from messages_api.models import Message, Ticket
-from control.models import MessageControl, TicketLink
+from control.models import MessageControl
 from contacts.models import Contact
 from messages_api.exceptions import NotFoundException
 from messages_api.serializer import MessageSerializer, TicketSerializer, TicketStatusSerializer
@@ -27,91 +27,12 @@ class MessageViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = Message.objects.all()
         message_id = self.request.query_params.get('id')
-        period = self.request.query_params.get('period')
         status = self.request.query_params.get('status')
 
         if message_id:
             queryset = queryset.filter(message_id=message_id)
         if status:
             queryset = queryset.filter(status=status)
-        # if period:
-        #     try:
-        #         if len(period) == 5:
-        #             period = '20' + period[-2:] + '-' + period[:2] + '-01'
-        #             dt.strptime(period, '%Y-%m-%d')
-        #     except ValueError:
-        #         raise NotFoundException(
-        #             'Invalid period format, should be YYYY-MM-DD or MM-YY.')
-        #     except ValidationError:
-        #         raise NotFoundException(
-        #             'Invalid date format! try to switch "-" to "/"')
-
-        #     if len(period) == 5:
-        #         period = dt.now().strftime(
-        #             '%Y-') + period[-2:] + '-' + period[:2] + ' 00:00:00'
-
-        #     try:
-        #         # parsed_period = datetime.strptime(period, '%Y-%m-%d').date()
-        #         if queryset.filter(period=period).exists():
-        #             queryset = queryset.filter(period=period)
-        #         else:
-        #             raise NotFoundException(
-        #                 "No obligation found for this period.")
-        #     except ValueError:
-        #         raise NotFoundException(
-        #             "Invalid period format, should be YYYY-MM-DD or MM-YY BLÉ")
-
-        # if status and not message_id:
-        #     try:
-        #         month_int = int(status)
-        #         if not queryset.filter(period__month=month_int).exists():
-        #             raise NotFoundException("None Message for this month")
-        #         elif month_int > 0 and month_int <= 12 and queryset.filter(period__month=month_int).exists():
-        #             queryset = queryset.filter(period__month=month_int)
-        #     except ValueError:
-        #         raise NotFoundException(
-        #             "Invalid month, should be an integer between 1 and 12")
-
-        # elif message_id and not status and not period:
-        #     if queryset.filter(cnpj_base=message_id).exists():
-        #         queryset = queryset.filter(cnpj_base=message_id)
-        #     else:
-        #         raise NotFoundException("None obligation for this cnpj")
-
-        # elif message_id and period:
-        #     try:
-        #         parsed_period = dt.strptime(period, '%Y-%m-%d').date()
-        #         if queryset.filter(period=parsed_period, cnpj_base=message_id).exists():
-        #             queryset = queryset.filter(
-        #                 period=parsed_period, cnpj_base=message_id)
-        #         else:
-        #             raise NotFoundException(
-        #                 "None obligation found for the specified parameters.")
-        #     except ValueError:
-        #         raise NotFoundException(
-        #             "Invalid period format, should be YYYY-MM-DD.")
-
-        # elif message_id and status:
-        #     try:
-        #         try:
-        #             month_int = int(status)
-        #             if not queryset.filter(period__month=month_int).exists():
-        #                 raise NotFoundException(
-        #                     "None Message for this month")
-        #             elif not queryset.filter(cnpj_base=message_id).exists():
-        #                 raise NotFoundException("CNPJ does not exists")
-        #             elif not queryset.filter(period__month=month_int, cnpj_base=message_id).exists():
-        #                 raise NotFoundException(
-        #                     "None Message in this month for the specified cnpj")
-        #         except ValueError:
-        #             raise NotFoundException(
-        #                 "Invalid month, should be an integer between 1 and 12")
-
-        #         if queryset.filter(period__month=month_int, cnpj_base=message_id).exists():
-        #             queryset = queryset.filter(
-        #                 period__month=month_int, cnpj_base=message_id)
-        #     except ValueError:
-        #         raise NotFoundException("Internal Error")
 
         return queryset
 
@@ -356,12 +277,8 @@ def update_ticket(request: HttpRequest):
     is_open = request.query_params.get('open')
     last_message_id = request.query_params.get('last_message')
     view = TicketViewSet()
-    # try:
+    
     return view.up_ticket(request, ticket_id, is_open, last_message_id)
-    # except NotFoundException:
-    #     return Response({'error': 400, 'message': "Ticket não encontrado"}, status=400)
-    # except Exception as e:
-    #     return Response({'error': 400, 'message': str(e)}, status=400)
 
 
 @api_view(['GET'])

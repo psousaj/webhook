@@ -17,3 +17,6 @@ pika==1.3.2
 python-dotenv==1.0.0
 psycopg==3.1.9
 whitenoise==6.4.0
+gevent==22.10.2
+dynoscale==1.2.2
+rocketry==2.5.1
