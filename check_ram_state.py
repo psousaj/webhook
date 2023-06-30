@@ -7,6 +7,7 @@ from rocketry.conds import every, time_of_day
 from httpx import Client
 from dotenv import load_dotenv
 from webhook.utils.tools import Logger
+from requests.exceptions import ChunkedEncodingError
 
 load_dotenv()
 logger = Logger(__name__)
@@ -53,7 +54,9 @@ def restart_dynos(client: Client, text = None):
 
 def refresh_log_stream(client: Client):
     response = client.post(LOG_STREAM_URL_RETRIEVE)
-    return response.json()['logplex_url'].replace('tail=false', 'tail=true')
+    new_stream_log_url = response.json()['logplex_url'].replace('tail=false', 'tail=true')
+    print(f"New Stream log url: {new_stream_log_url}")
+    return new_stream_log_url
 
 def check_state(client:Client):
         dyno_is_currently_up = {}
@@ -113,27 +116,33 @@ app = Rocketry()
 def check_memory():
     client = Client(base_url=HEROKU_API, headers=client_request_header, timeout=TIMEOUT)
     log_stream_url = load_env('LOG_STREAM_URL')
-
     while True:
-        response = requests.get(log_stream_url, stream=True)
-    
-        if response.status_code not in range(200, 202):
-            print('Esse link de stream expirou, buscando um novo')
-            log_stream_url = refresh_log_stream(client)
+        try:
+            response = requests.get(log_stream_url, stream=True)
+        
+            if response.status_code not in range(200, 202):
+                print('Esse link de stream expirou, buscando um novo')
+                log_stream_url = refresh_log_stream(client)
+                continue
+            else:
+                # check_state(client)
+
+                for line in response.iter_lines():
+                    if line:
+                        decoded_line = line.decode('utf-8')
+                        # print(decoded_line)
+                        if 'heroku[web.1]: Error R14 (Memory quota exceeded)' in decoded_line or 'heroku[worker.1]: Error R14 (Memory quota exceeded)' in decoded_line:
+                            print("Memory quota exceeded error found. Restarting dynos...")
+                            restart_dynos(client, text=f"Todos os dynos foram reiniciado para resolver problemas com memória RAM Checked-In: {currently_datetime()}")
+                            time.sleep(1)
+                            continue
+        except ChunkedEncodingError as e:
+            print(f"Erro de Chunked Encoding: {e}", "Retrieving new stream log url")
             continue
-        else:
-            # check_state(client)
 
-            for line in response.iter_lines():
-                if line:
-                    decoded_line = line.decode('utf-8')
-                    # print(decoded_line)
-                    if 'heroku[web.1]: Error R14 (Memory quota exceeded)' in decoded_line or 'heroku[worker.1]: Error R14 (Memory quota exceeded)' in decoded_line:
-                        print("Memory quota exceeded error found. Restarting dynos...")
-                        restart_dynos(client, text=f"Todos os dynos foram reiniciado para resolver problemas com memória RAM Checked-In: {currently_datetime()}")
-                        time.sleep(5)
-                        continue
-
+        except requests.exceptions.RequestException as e:
+            print(f"Erro na requisição: {e}", "Retrieving new stream log url")
+            continue
 
 if __name__ == "__main__":
     # app.run()
