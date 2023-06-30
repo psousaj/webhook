@@ -5,9 +5,10 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.response import Response
 
-from contacts.serializer import ContactSerializer
-from contacts.models import Contact
+from contacts.serializer import CompanyContactSerializer
+from contacts.models import Contact, CompanyContact
 from webhook.utils.tools import Logger
+from webhook.utils.get_objects import get_company_contact
 # Create your views here.
 
 logger = Logger(__name__)
@@ -15,14 +16,14 @@ logger = Logger(__name__)
 
 class ContactViewSet(viewsets.ModelViewSet):
     # queryset = Contact.objects.all()
-    serializer_class = ContactSerializer
+    serializer_class = CompanyContactSerializer
     http_method_names = ['get', 'post', 'put', 'patch']
 
     def get_queryset(self):
         contact_id = self.request.query_params.get('id')
         cnpj = self.request.query_params.get('cnpj')
         contact = self.request.query_params.get('contact')
-        queryset = Contact.objects.all()
+        queryset = CompanyContact.objects.all()
 
         if cnpj:
             queryset = queryset.filter(cnpj=cnpj)
@@ -37,7 +38,8 @@ class ContactViewSet(viewsets.ModelViewSet):
         cnpj = request.query_params.get('cnpj')
         contact_id = request.query_params.get('id')
         company_name = request.data.get('company_name')
-        id_establishment = request.data.get('id_establishment')
+        responsible_name = request.data.get('responsible_name')
+        establishment_id = request.data.get('establishment_id')
         country_code = request.data.get('country_code')
         ddd = request.data.get('ddd')
         contact_number = request.data.get('contact_number')
@@ -48,24 +50,37 @@ class ContactViewSet(viewsets.ModelViewSet):
             return Response({'error': 'You must provide a CONTACT_ID id query parameter.'}, status=400)
 
         try:
-            contact = Contact.objects.create(
-                cnpj=cnpj,
-                contact_id=contact_id,
-                company_name=company_name,
-                id_establishment=id_establishment,
-                country_code=country_code,
-                ddd=ddd,
-                contact_number=contact_number
+            company_contact = get_company_contact(cnpj=cnpj, establishment_id=establishment_id)
+
+            if not company_contact:
+                company_contact = CompanyContact.objects.create(
+                    cnpj=cnpj,
+                    company_name=company_name,
+                    establishment_id=establishment_id,
+                    responsible_name=responsible_name,
+                )
+            else:
+                raise IntegrityError("Opaaa, já tem um company_contact com esses dados major")
+
+            contact = company_contact.get_or_create_contact(
+                    contact_id=contact_id,
+                    country_code=country_code,
+                    ddd=ddd,
+                    contact_number=contact_number,
             )
+
+            if contact:
+                contact.append_new_contact(company_contact)
+                contact.append_new_establishment(establishment_id)
+
+            serializer = CompanyContactSerializer(company_contact)
+            return Response(serializer.data, status=201)
         except (IntegrityError, TypeError) as e:
-            # error_code, error_msg = e.args
             text = str(e)
             logger.debug(f"{text}")
-            return Response({f"error {text}": "Something Wrong", "message": text}, status=409)
-
-        # obligation_control =
-        serializer = ContactSerializer(contact)
-        return Response(serializer.data, status=201)
+            return Response({f"error": "Something Wrong", "message": text}, status=409)
+        
+        
 
     def list(self, request, *args, **kwargs):
         try:
@@ -84,8 +99,8 @@ class ContactViewSet(viewsets.ModelViewSet):
         try:
             contact = Contact.objects.get(contact_id=contact_id)
             if contact:
-                serializer = ContactSerializer(contact)
-                serializer = ContactSerializer(
+                serializer = CompanyContactSerializer(contact)
+                serializer = CompanyContactSerializer(
                     contact, data={'is_open': is_open}, partial=True)
                 if serializer.is_valid():
                     serializer.save()

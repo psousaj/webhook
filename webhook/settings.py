@@ -27,7 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-=cldztbc4jg&xl0!x673!*v2_=p$$eu)=7*f#d0#zs$44xx-h^'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 APPEND_SLASH = False
@@ -96,7 +96,7 @@ DATABASES = {
     # To use Neon with Django, you have to create a Project on Neon and specify the project connection settings in your settings.py in the same way as for standalone Postgres.
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'neondb',
+        'NAME': 'production_webhook',
         'USER': os.environ.get('DB_USER_TAX', os.getenv('DB_USER_TAX')),
         'PASSWORD': os.environ.get('DB_PASS_TAX', os.getenv('DB_PASS_TAX')),
         'HOST': os.environ.get('DB_HOST_TAX', os.getenv('DB_HOST_TAX')),

@@ -69,17 +69,19 @@ def check_state():
                         logger.info(f'{dyno} Dyno. There\'s something wrong here, state:{state}')
 
                     break  # Sai do loop while se a resposta for bem-sucedida (status 200)
+
+                if retries >= max_retries:
+                    text = f'{APP}: Maximum retries reached for {dyno}. Unable to retrieve state - Checked-In: {currently_datetime()}'
+                    logger.info(text)
+                    report = send_report(client=client, text=text)
+                    print(report)
+
                 elif dyno_state_request.status_code == 404:
                     # Refaz a verificação se a resposta for 404
                     retries += 1
                     logger.info(f'Retrying {dyno} state check ({retries}/{max_retries})')
                     continue  # Volta ao início do loop while para refazer a verificação
-
-            if retries >= max_retries:
-                text = f'{APP}: Maximum retries reached for {dyno}. Unable to retrieve state - Checked-In: {currently_datetime()}'
-                logger.info(text)
-                report = send_report(client=client, text=text)
-                print(report)
+                
 
         if not all(dyno_is_currently_up.values()):
             logger.info('Restarting all dynos for troubleshoting any RAM issue')

@@ -198,7 +198,7 @@ def transfer_ticket(contact_id, motivo=None):
     motivo_str = f"\n\nMotivo: {motivo}" if motivo is not None else ""
     send_message(
         os.environ.get('WOZ_GROUP_ID', os.getenv('WOZ_GROUP_ID')),
-        text=f"O cliente: {contact.company_name}\nSOLICITA ATENDIMENTO{motivo_str}\n\nProtocolo: {protocol.get_protocol_number()}")
+        text=f"O cliente: {contact.company_contact.first().responsible_name}\nSOLICITA ATENDIMENTO{motivo_str}\n\nProtocolo: {protocol.get_protocol_number()}")
 
     return "Solicitação de atendimento enviada para o grupo WOZ - RELATÓRIOS"
 
