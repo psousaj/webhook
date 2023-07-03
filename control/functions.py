@@ -9,9 +9,12 @@ from django.http import JsonResponse
 
 from webhook.utils.text import Answers, BaseText, TransferTicketReasons as Reasons
 from webhook.utils.get_objects import get_contact, get_message_control
-from webhook.utils.tools import get_current_period, get_contact_number
-from webhook.utils.tools import Logger
-from webhook.utils.request import any_request
+from webhook.utils.tools import (
+    Logger,
+    get_current_period, 
+    get_contact_number, 
+    any_digisac_request
+)
 
 logger = Logger(__name__)
 ## -----
@@ -24,11 +27,11 @@ ASSISTANCE_REQUESTS = r"\b(atendente|humano|pessoa|atendimento|atedente|sair|por
 NOT_CHAT_TYPES = r"\b(image|document|sticker)\b"
 
 
+##-- Parses texts and get actions to anwers
 def response_parse_handler(responses):
     responses = re.sub(r"\\b|\(\)|\(|\)", "", responses)
     responses = responses.replace('\\s', " ")
     return responses
-
 
 def is_match(client_response_text, responses, exact_match):
     if exact_match:
@@ -36,7 +39,6 @@ def is_match(client_response_text, responses, exact_match):
         return any(word in client_response_text.split() for word in responses.split('|'))
 
     return bool(re.search(responses, client_response_text, re.IGNORECASE))
-
 
 def process_input(sentence: str, contact_id: str, retries:int, pendencies: bool, exact_match:bool, chat_confirmed=False, ticket_closed=False, client_needs_help=False):
     
@@ -112,7 +114,6 @@ def process_input(sentence: str, contact_id: str, retries:int, pendencies: bool,
     send_message(contact_id, text=error_text)
     return "Mensagem de erro enviada"
 
-
 def generate_error_message(retries, pendencies) -> str:
     base_message = Answers.BASE_ERROR_MESSAGE.value
     if pendencies:
@@ -126,16 +127,51 @@ def generate_error_message(retries, pendencies) -> str:
     return base_message
 
 
+##-- Manage message states
+def get_control_object(contact_id):
+    contact_number = get_contact_number(contact_id, only_number=True)
+    period = dt.strptime(get_current_period(), "%m/%y").strftime('%Y-%m-%d')
+
+    control = get_message_control(contact=contact_number, period=period)
+
+    return control
+
+def get_message_json(contact_id, message, file_b64, subject="Sem Assunto", competence=None):
+    body = {
+        "text": "PDF" if file_b64 and not message else message,
+        "type": "chat || comment",
+        "contactId": contact_id,
+        "subject": subject,
+        "file" if file_b64 else None: {
+            "base64": file_b64,
+            "mimetype": "application/pdf",
+            "name": f"DAS MEI {get_current_period(file_name = True)}" if not message else f"DAS MEI {message}"
+        }
+    }
+
+    return body
+
+def send_message(contact_id, text="", file=None):
+    body = get_message_json(contact_id, text, file)
+
+    return any_digisac_request('/messages', body=body, method='post')
+
+def send_files(contact_id, pendencie, file):
+    try:
+        send_message(contact_id, text=pendencie, file=file)
+        return Response("Deu certo!")
+    except Exception as e:
+        return Response(f"Deu certo não: {e}")
+
+
+##-- Functional tasks to app
 @shared_task(name='client-needs-help')
 def switch_client_needs_help(contact_id, boolean):
-    contact = get_contact(contact_id=contact_id)
-    period = dt.strptime(get_current_period(), "%m/%y").strftime('%Y-%m-%d')
     control = get_control_object(contact_id=contact_id)
 
     control.client_needs_help = boolean
 
     return control.save()
-
 
 @shared_task(name='check_response')
 def check_client_response(contact_id):
@@ -171,7 +207,7 @@ def check_client_response(contact_id):
 
 @shared_task(name='close-ticket')
 def close_ticket(contact_id):
-    response = any_request(f'/contacts/{contact_id}/ticket/close', method='post', json=False)
+    response = any_digisac_request(f'/contacts/{contact_id}/ticket/close', method='post', json=False)
     if response.status_code == 200:
         return "ticket fechado"
 
@@ -180,7 +216,6 @@ def close_ticket(contact_id):
 @shared_task(name='confirm-message')
 def confirm_message(contact_id, closeTicket=True, timeout=30):
     control = get_control_object(contact_id=contact_id)
-
     # Fechar Control:
     control.status = 1
     control.save()
@@ -202,14 +237,6 @@ def transfer_ticket(contact_id, motivo=None):
 
     return "Solicitação de atendimento enviada para o grupo WOZ - RELATÓRIOS"
 
-def get_control_object(contact_id):
-    contact_number = get_contact_number(contact_id, only_number=True)
-    period = dt.strptime(get_current_period(), "%m/%y").strftime('%Y-%m-%d')
-
-    control = get_message_control(contact=contact_number, period=period)
-
-    return control
-
 @shared_task(name='update_control_pendencies')
 def update_ticket_control_pendencies(contact_id, pendencies):
     control = get_control_object(contact_id=contact_id)
@@ -219,25 +246,46 @@ def update_ticket_control_pendencies(contact_id, pendencies):
 
     return f"Pendencias atualizadas contact_id: {contact_id}"
 
-def get_message_json(contact_id, message, file_b64, subject="Sem Assunto", competence=None):
-    body = {
-        "text": "PDF" if file_b64 and not message else message,
-        "type": "chat || comment",
-        "contactId": contact_id,
-        "subject": subject,
-        "file" if file_b64 else None: {
-            "base64": file_b64,
-            "mimetype": "application/pdf",
-            "name": f"DAS MEI {get_current_period(file_name = True)}" if not message else f"DAS MEI {message}"
-        }
-    }
+@shared_task(name='send-pendencies')
+def get_contact_pendencies_and_send(contact_id):
+    try:
+        contact = get_contact(contact_id=contact_id)
+        pendencies_list = contact.get_pendencies()
 
-    return body
+        if len(pendencies_list) > 5:
+            send_message(
+                contact_id,
+                text=Answers.get_text_with_replace('MORE_THAN_FIVE_PENDENCIES', len(pendencies_list))
+            )
+            transfer_ticket.apply_async(
+                args=[contact_id], 
+                kwargs={
+                    "motivo": Reasons.get_text_with_replace('MORE_THAN_FIVE_PENDENCIES',len(pendencies_list))
+                }
+            )
 
-def send_message(contact_id, text="", file=None):
-    body = get_message_json(contact_id, text, file)
+            return "número de pendencias maior que 5, atendente solicitado"
 
-    return any_request('/messages', body=body, method='post')
+        for pendencie in pendencies_list:
+            competence = pendencie.period.strftime("%B/%m")
+            send_files(contact.contact_id, competence, pendencie.pdf)
+
+        close_ticket.apply_async(args=[contact_id])
+        return "pendencias enviadas ao cliente com sucesso"
+    except Exception as e:
+        return e
+
+
+##-- Addtional views 
+@api_view(['GET'])
+def check_client_response_viewset(request):
+    try:
+        contact_id = request.query_params.get('contact_id')
+        check_client_response.apply_async(args=[contact_id])
+
+        return JsonResponse({"Status": "Message check is in process"})
+    except Exception as e:
+        return Response({'Status': 'Something was wrong', 'message': f'{str(e)}'}, status=500)
 
 @api_view(['GET'])
 def init_app(request):
@@ -271,58 +319,3 @@ def init_app(request):
         return Response({'success': 'message_sent'})
     except Exception as e:
         return Response({'error': str(e)}, status=500)
-
-@shared_task(name='send-pendencies')
-def get_contact_pendencies_and_send(contact_id):
-    try:
-        contact = get_contact(contact_id=contact_id)
-        pendencies_list = contact.get_pendencies()
-
-        if len(pendencies_list) > 5:
-            send_message(
-                contact_id,
-                text=Answers.get_text_with_replace('MORE_THAN_FIVE_PENDENCIES', len(pendencies_list))
-            )
-            transfer_ticket.apply_async(
-                args=[contact_id], 
-                kwargs={
-                    "motivo": Reasons.get_text_with_replace('MORE_THAN_FIVE_PENDENCIES',len(pendencies_list))
-                }
-            )
-
-            return "número de pendencias maior que 5, atendente solicitado"
-
-        for pendencie in pendencies_list:
-            competence = pendencie.period.strftime("%B/%m")
-            send_files(contact.contact_id, competence, pendencie.pdf)
-
-        close_ticket.apply_async(args=[contact_id])
-        return "pendencias enviadas ao cliente com sucesso"
-    except Exception as e:
-        return e
-
-def send_files(contact_id, pendencie, file):
-    try:
-        send_message(contact_id, text=pendencie, file=file)
-        return Response("Deu certo!")
-    except Exception as e:
-        return Response(f"Deu certo não: {e}")
-
-@api_view(['GET'])
-def check_client_response_viewset(request):
-    try:
-        contact_id = request.query_params.get('contact_id')
-        check_client_response.apply_async(args=[contact_id])
-
-        return JsonResponse({"Status": "Message check is in process"})
-    except Exception as e:
-        return Response({'Status': 'Something was wrong', 'message': f'{str(e)}'}, status=500)
-
-@api_view(['GET'])
-def transfer_ticket_viewset(request):
-    cnpj = request.query_params.get('cnpj')
-    contact = get_contact(cnpj=cnpj)
-
-    transfer_ticket.apply_async(args=[contact.contact_id])
-
-    return Response("Successfully requested for an atendant")
