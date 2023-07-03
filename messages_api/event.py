@@ -1,48 +1,25 @@
-import json
 import os
-import random
 import requests
 from celery import shared_task
 
-from webhook.utils.tools import get_contact_number, get_current_period, Logger
-from webhook.utils.get_objects import get_ticket, get_message
-from webhook.utils.request import any_request as digisac_api
+from control.functions import check_client_response
+from webhook.utils.get_objects import get_message, get_ticket
+
+from webhook.utils.tools import (
+        Logger, 
+        get_event_status, 
+        message_is_saved, 
+        get_current_period, 
+        get_contact_number, 
+        message_exists_in_digisac, 
+        update_ticket_last_message
+    )
 
 logger = Logger(__name__)
 WEBHOOK_API = os.environ.get("WEBHOOK_API", os.getenv("WEBHOOK_API"))
 
-def get_event_status(event, message_id: str = None, ticket_id: str = None):
-    if event == 'ticket':
-        ticket = get_ticket(ticket_id=ticket_id)
-        return ticket.is_open if ticket else False
 
-    if event == 'message':
-        message = get_message(message_id=message_id)
-        return message.status if message else 0
-
-
-def update_ticket_last_message(ticket_id:str):
-    response = digisac_api(f'/tickets/{ticket_id}', method='get', json=False)
-
-    if response.status_code == 200:
-        try:
-            digisac_ticket = response.json()
-            last_message_id = digisac_ticket.get('lastMessageId')
-            is_open = digisac_ticket.get('isOpen')
-            
-            ticket = get_ticket(ticket_id=ticket_id)
-            ticket.last_message_id = last_message_id
-            ticket.is_open = is_open
-            ticket.save()
-
-            return "Show Papai. Atualizado!!"
-        except Exception as e:
-            raise ValueError(
-                f"Algo de errado não está certo - {ticket_id}/{str(e)}")
-
-    return "Nada foi feito! Ticket provavelmente ainda não foi criado"
-
-
+##-- Handler to events
 def manage(data):
     event_handlers = {
         'message.created': (handle_message_created, ['id', 'isFromMe']),
@@ -66,26 +43,8 @@ def manage(data):
     return f"Event: {event} handled to the refers function"
 
 
-def message_exists_in_digisac(message_id):
-    message = digisac_api(f'/messages/{message_id}', method='get', json=True)
-
-    try:
-        if message['sent']:
-            return True
-        else: return False
-    except KeyError:
-        with open(f'json-error{random.randint(0, 50)}.json', 'w') as f:
-            json.dump(message, f)
-
-
-def message_is_saved(message_id) -> bool:
-    # Esse método retorna None se não encontrar o objeto, logo num if qualquer resposta
-    # não deverá ter problema
-    message = get_message(message_id=message_id)
-
-    return True if message else False
-
-@shared_task(name='create_message', autoretry_for=((ValueError,)), retry_backoff=True, max_retries=3)
+##-- Tasks to handle events
+@shared_task(name='create_message')
 def handle_message_created(message_id, isFromMe, data=...):
     message_exists = message_exists_in_digisac(message_id=message_id)
     message_saved = message_is_saved(message_id=message_id)
@@ -101,32 +60,27 @@ def handle_message_created(message_id, isFromMe, data=...):
     number = get_contact_number(contact_id=contact_id)
     parameters = {"phone": number, "period": date}
     message_type = data.get("type")
-    try:
-        message_body = {
-            "message_id": message_id,
-            "contact_id": contact_id,
-            "timestamp": data.get('timestamp'),
-            "status": data['data']['ack'],
-            "ticket": data.get('ticketId'),
-            "message_type": data.get('type'),
-            "is_from_me": isFromMe,
-            "text": data.get("text", message_type)
-        }
-    except (KeyError, TypeError):
-        with open(f'data{random.randint(0, 50)}.json', 'w') as f:
-            json.dump(data, f)
+    message_body = {
+        "message_id": message_id,
+        "contact_id": contact_id,
+        "timestamp": data.get('timestamp'),
+        "status": data['data']['ack'],
+        "ticket": data.get('ticketId'),
+        "message_type": data.get('type'),
+        "is_from_me": isFromMe,
+        "text": data.get("text", message_type)
+    }
 
     if number is None:
         raise ValueError(
-            f'Consulta do telefone na {url} com id {contact_id} falhou')
+            f'Consulta do telefone:{number} na {url} com id {contact_id} falhou')
     # if not isFromMe:
     response = requests.post(url, json=message_body, params=parameters)
 
     update_ticket_last_message(ticket_id=data.get('ticketId'))
 
     if not isFromMe and not response.status_code in range(400, 501):
-        check_url = f'{WEBHOOK_API}/control/check_response'
-        requests.get(check_url, params={"contact_id": contact_id})
+        check_client_response.apply_async(args=[contact_id])
 
     if response.status_code == 409:
         return "Esta mensagem já existe por algum motivo chegou até aqui novamente. Verifique os logs"
@@ -137,8 +91,7 @@ def handle_message_created(message_id, isFromMe, data=...):
 
     return response
 
-
-@shared_task(name='update_message', retry_backoff=True, max_retries=3)
+@shared_task(name='update_message')
 def handle_message_updated(message_id, data=...):
     if not message_id:
         return "Message vazio. diabo é isso?"
@@ -163,14 +116,11 @@ def handle_message_updated(message_id, data=...):
         
     except Exception as e:
         logger.debug(e)
-        with open(f'filew-{random.randint(50, 100)}.json', 'w') as f:
-            json.dump(data, f)
         raise Exception(f"erro: {str(e)} - actual_staus:{type(actual_status)} e status = {type(status)}")
 
     return "Mensagem atualizada com sucesso" 
 
-
-@shared_task(name='create_ticket', retry_backoff=True, max_retry=3)
+@shared_task(name='create_ticket')
 def handle_ticket_created(ticket_id, contact_id, last_message_id, data=...):
     url = f'{WEBHOOK_API}/messages/create/ticket'
     params = {
@@ -188,8 +138,7 @@ def handle_ticket_created(ticket_id, contact_id, last_message_id, data=...):
 
     return response
 
-
-@shared_task(name='update_ticket', autoretry_for=((ValueError, )), max_retries=3)
+@shared_task(name='update_ticket')
 def handle_ticket_updated(ticket_id, data=...):
     actual_status = get_event_status('ticket', ticket_id=ticket_id)
     last_message_id = data.get('lastMessageId')

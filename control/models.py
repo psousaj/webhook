@@ -1,11 +1,7 @@
 from django.db import models
 
 from messages_api.models import Ticket, Message
-from webhook.utils.request import any_request
 # Create your models here.
-
-
-from django.db import models
 
 
 class MessageControl(models.Model):
@@ -45,9 +41,16 @@ class MessageControl(models.Model):
             return None
 
     def get_protocol_number(self):
-        ticket_id = self.ticket.ticket_id
-        response = any_request(
-            f'/tickets/{ticket_id}', method='get', json=False)
+        from webhook.utils.tools import any_digisac_request
+
+        ticket_link = self.get_ticket_link()
+
+        if ticket_link and ticket_link.last_ticket:
+            ticket_id = ticket_link.last_ticket.ticket_id
+        else:
+            ticket_id = self.ticket.ticket_id
+
+        response = any_digisac_request(f'/tickets/{ticket_id}', method='get', json=False)
 
         if response.status_code == 200:
             return response.json()['protocol']
