@@ -4,9 +4,9 @@ from celery import shared_task
 
 from control.functions import check_client_response
 from webhook.utils.get_objects import get_message, get_ticket
+from webhook.utils.logger import Logger
 
 from webhook.utils.tools import (
-        Logger, 
         get_event_status, 
         message_is_saved, 
         get_current_period, 

@@ -1,7 +1,5 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
-from django.http import Http404
-from django.shortcuts import get_object_or_404
 
 # Create your models here.
 
@@ -38,6 +36,7 @@ class CompanyContact(models.Model):
     company_name = models.CharField(max_length=255)
     responsible_name = models.CharField(max_length=255)
     establishment_id = models.IntegerField(null=True, blank=True)
+    pdf = models.TextField(null=True, blank=True)
     contact = models.ForeignKey(
         Contact,
         on_delete=models.CASCADE,

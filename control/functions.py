@@ -5,16 +5,18 @@ from datetime import datetime as dt
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from django.http import JsonResponse
+
+from control.models import DASFileGrouping
 
 from webhook.utils.text import Answers, BaseText, TransferTicketReasons as Reasons
-from webhook.utils.get_objects import get_contact, get_message_control
+from webhook.utils.get_objects import get_contact, get_message_control, get_company_contact
 from webhook.utils.tools import (
-    Logger,
     get_current_period, 
     get_contact_number, 
-    any_digisac_request
+    any_digisac_request,
+    group_das_to_send
 )
+from webhook.utils.logger import Logger
 
 logger = Logger(__name__)
 ## -----
@@ -278,21 +280,15 @@ def get_contact_pendencies_and_send(contact_id):
 
 ##-- Addtional views 
 @api_view(['GET'])
-def check_client_response_viewset(request):
-    try:
-        contact_id = request.query_params.get('contact_id')
-        check_client_response.apply_async(args=[contact_id])
-
-        return JsonResponse({"Status": "Message check is in process"})
-    except Exception as e:
-        return Response({'Status': 'Something was wrong', 'message': f'{str(e)}'}, status=500)
-
-@api_view(['GET'])
 def init_app(request):
     try:
-        contact = get_contact(cnpj=request.query_params.get('cnpj'))
-        pendencies_list = contact.get_pendencies()
+        cnpj=request.query_params.get('cnpj')
+        company_contact = get_company_contact(cnpj=cnpj)
+        pendencies_list = company_contact.get_pendencies()
+
         file = request.data.get('pdf')
+        company_contact.pdf = file
+        company_contact.save()
 
         reduce = request.query_params.get('reduce')
         if reduce:
@@ -302,20 +298,47 @@ def init_app(request):
 
             pendencies_list = pendencies_list[:reduce]
 
-        send_message(contact.contact_id, text=SAUDACAO_TEXT)
-        send_message(contact.contact_id, file=file)
+        if len(company_contact.contact.company_contacts.all()) > 1:
+            group_das_to_send(
+                company_contact.contact,
+                company_contact,
+                get_current_period(dtime=True)
+            ) 
+            return Response({'success': 'Contato responsável por mais de uma empresa'})
+
+        send_message(company_contact.contact.contact_id, text=SAUDACAO_TEXT)
+        send_message(company_contact.contact.contact_id, file=file)
 
         if pendencies_list:
             pendencies_text = [
                 pendencies.period.strftime("%B/%Y") for pendencies in pendencies_list
             ]
             pendencies_message = BaseText.get_pendencies_text(", ".join(pendencies_text))
-
-            send_message(contact.contact_id, text=pendencies_message)
-            update_ticket_control_pendencies.apply_async(args=[contact.contact_id, True])
+           
+            send_message(company_contact.contact_id, text=pendencies_message)
+            update_ticket_control_pendencies.apply_async(args=[company_contact.contact_id, True])
         else:
-            send_message(contact.contact_id, text=DISCLAIMER_TEXT)
+            send_message(company_contact.contact_id, text=DISCLAIMER_TEXT)
 
         return Response({'success': 'message_sent'})
     except Exception as e:
         return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])    
+def send_groupinf_of_das(request):
+    grouping_list = DASFileGrouping.objects.all()
+
+    if grouping_list:
+        for grouping in grouping_list:
+            files_to_send = [(company.company_name, company.pdf) for company in grouping.companies.all()]
+            contact = grouping.contact
+
+            send_message(contact.contact_id, text=SAUDACAO_TEXT)
+            for name, pdf in files_to_send:
+                send_message(contact.contact_id, file=pdf, text=f"{name}")
+
+            send_message(contact.contact_id, text=DISCLAIMER_TEXT)
+
+        return Response({'success': f'{len(grouping_list)} contatos responsáveis por mais que uma empresa receberam os arquivos'})
+    
+    return Response({'info': 'Nenhum agrupamento de DAS esse mês'}, status=500)

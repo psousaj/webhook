@@ -8,7 +8,7 @@ from django.http.request import HttpRequest
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
-from webhook.utils.tools import Logger
+from webhook.utils.logger import Logger
 from messages_api.models import Message, Ticket
 from control.models import MessageControl
 from contacts.models import Contact
