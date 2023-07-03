@@ -290,20 +290,21 @@ def init_app(request):
         company_contact.pdf = file
         company_contact.save()
 
-        reduce = int(request.query_params.get('reduce'))
+        reduce = request.query_params.get('reduce')
         if reduce:
+            reduce = int(reduce)
             if reduce == 0:
                 pendencies_list = None
 
             pendencies_list = pendencies_list[:reduce]
 
-        if len(company_contact.contact.company_contacts) > 1:
+        if len(company_contact.contact.company_contacts.all()) > 1:
             group_das_to_send(
                 company_contact.contact,
                 company_contact,
                 get_current_period(dtime=True)
             ) 
-            return "Contato responsável por mais de uma empresa"
+            return Response({'success': 'Contato responsável por mais de uma empresa'})
 
         send_message(company_contact.contact.contact_id, text=SAUDACAO_TEXT)
         send_message(company_contact.contact.contact_id, file=file)
@@ -324,20 +325,17 @@ def init_app(request):
         return Response({'error': str(e)}, status=500)
 
 @api_view(['GET'])    
-def send_groupinf_of_das():
+def send_groupinf_of_das(request):
     grouping_list = DASFileGrouping.objects.all()
 
     if grouping_list:
         for grouping in grouping_list:
-            files_to_send = [(company.name, company.pdf) for company in grouping.companies]
+            files_to_send = [(company.company_name, company.pdf) for company in grouping.companies.all()]
             contact = grouping.contact
 
-            text = f"Segue arquivos referentes as empresas: {[name for name, pdf in files_to_send]}"
-
             send_message(contact.contact_id, text=SAUDACAO_TEXT)
-            send_message(contact.contact_id, text=text)
             for name, pdf in files_to_send:
-                send_message(contact.contact_id, file=pdf)
+                send_message(contact.contact_id, file=pdf, text=f"{name}")
 
             send_message(contact.contact_id, text=DISCLAIMER_TEXT)
 

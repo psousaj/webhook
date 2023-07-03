@@ -95,7 +95,7 @@ class DASFileGrouping(models.Model):
     period = models.DateField()
 
     def __str__(self):
-        return f"Agrupamento de DAS para {self.contato}"
+        return f"Agrupamento de DAS para {self.contact}"
     
     def append_new_companie(self, company_contact):
         if not self.companies.filter(cnpj=company_contact.cnpj).exists():
