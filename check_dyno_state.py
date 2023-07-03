@@ -6,7 +6,7 @@ from rocketry import Rocketry
 from rocketry.conds import every, time_of_day
 from dotenv import load_dotenv
 
-from webhook.utils.tools import Logger 
+from webhook.utils.logger import Logger
 
 load_dotenv()
 app = Rocketry()

@@ -1,5 +1,5 @@
 from enum import Enum
-from webhook.utils.tools import get_current_period
+from datetime import datetime as dt
 
 class TransferTicketReasons(Enum):
     ASK_FOR_ATTENDANT = "Atendente solicitado no canal de documentos"
@@ -34,7 +34,7 @@ class Answers(Enum):
 class BaseText(Enum):
     saudacao = f"""Olá, espero que esteja bem.
     Gostaria de informar que seu Documento de Arrecadação Simplificado(DAS) 
-    período ({get_current_period(file_name=True)}) está disponível, irei envia-lo em seguida.
+    período ({dt.today().strftime('%B/%Y').capitalize()}) está disponível, irei envia-lo em seguida.
     Lembrando que é importante que o pagamento seja realizado
     dentro do prazo estipulado para evitar juros e multa
     """

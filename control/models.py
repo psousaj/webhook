@@ -1,6 +1,7 @@
 from django.db import models
 
 from messages_api.models import Ticket, Message
+from contacts.models import CompanyContact, Contact
 # Create your models here.
 
 
@@ -85,4 +86,18 @@ class TicketLink(models.Model):
         if not self.additional_tickets.filter(ticket_id=new_ticket.ticket_id).exists():
             self.additional_tickets.add(new_ticket)
             self.last_ticket = new_ticket
+            self.save()
+
+
+class DASFileGrouping(models.Model):
+    contact = models.ForeignKey(Contact, on_delete=models.CASCADE, related_name='das_file_grouping')
+    companies = models.ManyToManyField(CompanyContact, blank=True)
+    period = models.DateField()
+
+    def __str__(self):
+        return f"Agrupamento de DAS para {self.contato}"
+    
+    def append_new_companie(self, company_contact):
+        if not self.companies.filter(cnpj=company_contact.cnpj).exists():
+            self.companies.add(company_contact)
             self.save()

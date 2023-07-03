@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from django.http.response import JsonResponse
 from rest_framework.decorators import api_view
 
-from webhook.utils.tools import Logger
+from webhook.utils.logger import Logger
 from messages_api import event
 
 logger = Logger(__name__)

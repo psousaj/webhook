@@ -3,7 +3,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 
 from contacts.models import CompanyContact, Contact, Pendencies
-from control.models import MessageControl, TicketLink
+from control.models import MessageControl, TicketLink, DASFileGrouping
 from messages_api.models import Message, Ticket
 
 max_retries = 5
@@ -86,3 +86,13 @@ def get_ticket(**kwargs):
             retries += 1
     return None
 
+def get_das_grouping(**kwargs):
+    retries = 0
+    while retries < max_retries:
+        try:
+            grouping = get_object_or_404(DASFileGrouping, **kwargs)
+            return grouping
+        except Http404:
+            time.sleep(att_tax)
+            retries += 1
+    return None

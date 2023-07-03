@@ -1,53 +1,27 @@
 import os
-import logging
 from httpx import get, Client
 from datetime import datetime as dt
 from dotenv import load_dotenv
 
 from webhook.utils.get_objects import get_ticket, get_message
+from webhook.utils.logger import Logger
 
 load_dotenv()
 
-class Logger:
 
-    def __init__(self, name) -> None:
-        # Configuração do logger
-        self.logger = logging.getLogger(name)
-        self.logger.setLevel(logging.DEBUG)
+saudacao = f"""Olá, espero que esteja bem.
+Gostaria de informar que seu Documento de Arrecadação Simplificado(DAS) 
+período ({dt.today().strftime('%B/%Y').capitalize()}) está disponível, irei envia-lo em seguida.
+Lembrando que é importante que o pagamento seja realizado
+dentro do prazo estipulado para evitar juros e multa
+"""
+suggest = "Qualquer dúvida ou sugestão entre em contato através do WhatsApp: https://wa.me/5588988412833."
+disclaimer = f"""
+{suggest}
 
-        # Criando um handler para o log no terminal
-        self.console_handler = logging.StreamHandler()
-        self.console_handler.setLevel(logging.DEBUG)
-
-        # Criando um handler para o log em arquivo de texto
-        # self.file_handler = logging.FileHandler('webhook_log.txt')
-        # self.file_handler.setLevel(logging.DEBUG)
-
-        # Definindo o formato das mensagens de log
-        formatter = logging.Formatter(
-            '%(asctime)s - %(name)s -%(levelname)s- %(message)s', datefmt='%d/%m/%Y|%H:%M:%S')
-        self.console_handler.setFormatter(formatter)
-        # self.file_handler.setFormatter(formatter)
-
-        # Adicionando os handlers ao logger
-        self.logger.addHandler(self.console_handler)
-        # self.logger.addHandler(self.file_handler)
-
-    def debug(self, msg, *args, **kwargs):
-        self.logger.debug(msg, *args, **kwargs)
-
-    def info(self, msg, *args, **kwargs):
-        self.logger.info(msg, *args, **kwargs)
-
-    def warning(self, msg, *args, **kwargs):
-        self.logger.warning(msg, *args, **kwargs)
-
-    def error(self, msg, *args, **kwargs):
-        self.logger.error(msg, *args, **kwargs)
-
-    def critical(self, msg, *args, **kwargs):
-        self.logger.critical(msg, *args, **kwargs)
-
+Por favor, preciso que confirme o recebimento desta mensagem. 
+Responda SIM, OK, ou RECEBI por gentileza.
+"""
 
 ##-- Logger instances to use
 logger = Logger(__name__)
@@ -106,9 +80,12 @@ def get_contact_number(contact_id: str, only_number=False):
 
     return None
 
-def get_current_period(file_name=False) -> str:
+def get_current_period(file_name=False, dtime=False) -> str:
     if file_name:
         return dt.today().strftime('%B/%Y').capitalize()
+
+    if dtime:
+        return dt.today()
 
     return dt.today().strftime('%m/%y')
 
@@ -158,3 +135,10 @@ def message_is_saved(message_id) -> bool:
     message = get_message(message_id=message_id)
 
     return True if message else False
+
+def group_das_to_send(contact, company_contact, period):
+    from control.models import DASFileGrouping
+
+    grouping, created = DASFileGrouping.objects.get_or_create(contact=contact, period=period)
+
+    grouping.append_new_companie(company_contact)
