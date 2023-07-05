@@ -17,7 +17,7 @@ from control.models import MessageControl
 from control.serializer import ControlMessageSerializer
 from control.functions import send_message
 
-from webhook.utils.get_objects import get_contact
+from webhook.utils.get_objects import get_company_contact
 
 # Create your views here.
 logger = Logger(__name__)
@@ -147,7 +147,7 @@ def create_pendencies_viewset(request: HttpRequest):
     except ValueError:
         return Response({"error": "Invalid date format. It should be YYYY-MM-DD."}, status=400)
 
-    contact = get_contact(cnpj=cnpj)
+    contact = get_company_contact(cnpj=cnpj)
     if contact is None:
         return Response({"error": f"No contact found with cnpj: {cnpj}"}, status=404)
 

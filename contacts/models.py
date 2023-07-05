@@ -75,3 +75,9 @@ class Pendencies(models.Model):
     cnpj = models.CharField(max_length=255)
     period = models.DateField()
     pdf = models.TextField()
+
+    class Meta:
+        unique_together = ('cnpj', 'period')
+
+    def __str__(self):
+        return f"{self.cnpj} - {self.period}"
