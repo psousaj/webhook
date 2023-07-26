@@ -1,5 +1,5 @@
 from django.urls import path
-from control.functions import init_app, send_groupinf_of_das
+from control.functions import init_app, send_groupinf_of_das, send_message_to_client
 from control.views import (
     ControlMessageViewSet, 
     update_control_message, 
@@ -15,4 +15,5 @@ urlpatterns = [
     path('/create', ControlMessageViewSet.as_view({'post': 'create'})),
     path('/update', update_control_message, name='update_message'),
     path('/report/group-das', send_groupinf_of_das, name='verify_grouping_of_das'),
+    path('/message/send', send_message_to_client, name='send_message_to_client'),
 ]
