@@ -11,8 +11,8 @@ RUN apt-get update && \
         # default-libmysqlclient-dev \
         locales \
         supervisor \
-        openssh-client
-
+        openssh-client \
+        nano
         
 
 

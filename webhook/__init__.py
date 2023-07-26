@@ -16,7 +16,7 @@ def is_local_machine() -> bool:
                     file.write(line)
 
     host_name = socket.gethostname()
-    is_localhost = host_name in ("localhost", "127.0.0.1", "webhook")
+    is_localhost = host_name in ("localhost", "127.0.0.1", "docker")
     if is_localhost:
         handle_env_file(True)
     else:
