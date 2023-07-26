@@ -11,18 +11,18 @@ def is_local_machine() -> bool:
         with open('.env', 'w') as file:
             for line in lines:
                 if line.startswith("IS_LOCALHOST"):
-                    file.write(f"IS_LOCALHOST={bool}\n")
+                    file.write(f"IS_LOCALHOST={is_localhost}\n")
                 else:
                     file.write(line)
 
     host_name = socket.gethostname()
-    is_localhost = host_name in ("localhost", "127.0.0.1")
+    is_localhost = host_name in ("localhost", "127.0.0.1", "webhook")
     if is_localhost:
         handle_env_file(True)
     else:
         handle_env_file(False)
 
-    print("IS_LOCALHOST", is_localhost)
+    print("IS_LOCALHOST", is_localhost, f"from host: {host_name}")
 
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'webhook.settings')
