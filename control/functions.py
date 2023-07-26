@@ -342,3 +342,24 @@ def send_groupinf_of_das(request):
         return Response({'success': f'{len(grouping_list)} contatos responsáveis por mais que uma empresa receberam os arquivos'})
     
     return Response({'info': 'Nenhum agrupamento de DAS esse mês'}, status=500)
+
+@api_view(['POST'])
+def send_message_to_client(request):
+    contact_number = request.query_params.get('phone')
+    text = request.data.get('text')
+    contact = get_contact(contact_number=contact_number)
+
+    text = '''
+Empresários: Descubra a Nova Linha de Crédito do Pronamp! 🚀💼 
+
+💰📈 Clique no link e saiba como impulsionar seu negócio com essa oportunidade única! 
+🌟 #Pronamp #LinhaDeCrédito #Empresários #OportunidadeDeCrescimento
+
+https://www.instagram.com/p/Cu-UcmTJwXR/
+''' if not text else text
+
+    send_message(
+        contact.contact_id, text=text
+    )
+
+    return Response(f"Mensagem enviada com sucesso para: {contact_number}")
