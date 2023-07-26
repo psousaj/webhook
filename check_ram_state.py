@@ -16,7 +16,8 @@ def load_env(var):
 
 APP='WEBHOOK'
 TIMEOUT=120
-WEBHOOK_API=load_env("WEBHOOK_API_LOCAL") if load_env("IS_LOCALHOST") else load_env("WEBHOOK_API")
+IS_LOCALHOST = load_env("IS_LOCALHOST")
+WEBHOOK_API=load_env("WEBHOOK_API_LOCAL") if IS_LOCALHOST else load_env("WEBHOOK_API")
 HEROKU_API_KEY = load_env('HEROKU_API_KEY')
 HEROKU_API = load_env('HEROKU_API')
 HEROKU_APP_NAME = 'woz'

@@ -19,7 +19,8 @@ logger = Logger(__name__)
 def load_env(var):
     return os.environ.get(var, os.getenv(var))
 
-WEBHOOK_API = load_env("WEBHOOK_API_LOCAL") if load_env("IS_LOCALHOST") else load_env("WEBHOOK_API")
+IS_LOCALHOST = load_env("IS_LOCALHOST")
+WEBHOOK_API = load_env("WEBHOOK_API_LOCAL") if IS_LOCALHOST else load_env("WEBHOOK_API")
 
 
 ##-- Handler to events
