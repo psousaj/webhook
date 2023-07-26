@@ -3,13 +3,13 @@ import time
 import requests
 import datetime
 from httpx import Client
-from rocketry import Rocketry
+# from rocketry import Rocketry
 from dotenv import load_dotenv
-from rocketry.conds import every, time_of_day
+# from rocketry.conds import every, time_of_day
 from requests.exceptions import ChunkedEncodingError
 
 load_dotenv()
-app = Rocketry()
+# app = Rocketry()
 
 def load_env(var):
     return os.environ.get(var, os.getenv(var))
@@ -22,7 +22,7 @@ HEROKU_APP_NAME = 'woz'
 DYNO_NAME = ['worker.1', 'web.1']
 ALLOWED_DYNO_STATES = ['starting', 'up']
 NOT_ALLOWED_DYNO_STATES = ['crashed', 'down', 'idle']
-CHECK_STATE_INTERVAL = every("2 minutes") & time_of_day.between("08:00", "21:00")
+# CHECK_STATE_INTERVAL = every("2 minutes") & time_of_day.between("08:00", "21:00")
 WEBHOOK_SEND_REPORT_URL = f'{load_env("WEBHOOK_API")}/control/report/send-message'
 LOG_STREAM_URL_RETRIEVE = f'/apps/{HEROKU_APP_NAME}/log-sessions'
 
@@ -53,9 +53,21 @@ def restart_dynos(client: Client, text = None):
     return
 
 def refresh_log_stream(client: Client):
+    def handle_env_file(stream_url:str):
+        with open('.env', 'r') as f:
+            lines = f.readlines()
+        with open('.env', 'w') as file:
+            for line in lines:
+                if line.startswith("LOG_STREAM_URL"):
+                    file.write(f"LOG_STREAM_URL='{stream_url}'\n")
+                else:
+                    file.write(line)
+
     response = client.post(LOG_STREAM_URL_RETRIEVE)
     new_stream_log_url = response.json()['logplex_url'].replace('tail=false', 'tail=true')
-    print(f"New Stream log url: {new_stream_log_url}")
+    print(f"\nNew Stream log url: {new_stream_log_url}")
+    handle_env_file(new_stream_log_url)
+    print(f"\nENV File modificado: (LOG_STREAM_URL='{new_stream_log_url}')")
     return new_stream_log_url
 
 
@@ -72,6 +84,7 @@ def check_memory():
                 log_stream_url = refresh_log_stream(client)
                 continue
             else:
+                print("\n\nOuvindo logs do sistema web:")
                 for line in response.iter_lines():
                     if line:
                         decoded_line = line.decode('utf-8')

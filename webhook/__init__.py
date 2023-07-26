@@ -1,7 +1,29 @@
 import os
+import socket
 from celery import Celery
 from dotenv import load_dotenv
 from django.conf import settings
+
+def is_local_machine() -> bool:
+    def handle_env_file(is_localhost:bool):
+        with open('.env', 'r') as f:
+            lines = f.readlines()
+        with open('.env', 'w') as file:
+            for line in lines:
+                if line.startswith("IS_LOCALHOST"):
+                    file.write(f"IS_LOCALHOST={bool}\n")
+                else:
+                    file.write(line)
+
+    host_name = socket.gethostname()
+    is_localhost = host_name in ("localhost", "127.0.0.1")
+    if is_localhost:
+        handle_env_file(True)
+    else:
+        handle_env_file(False)
+
+    print("IS_LOCALHOST", is_localhost)
+
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'webhook.settings')
 load_dotenv()
@@ -27,7 +49,9 @@ worker_prefetch_multiplier = 1
 # If you tasks are CPU bound, then limit to the number of cores, otherwise increase substainally
 worker_concurrency = 4
 
-
 @app.task(bind=True)
 def debug_task(self):
     print(f'Request: {self.request!r}')
+
+#Verifica se a máquina é local
+is_local_machine()

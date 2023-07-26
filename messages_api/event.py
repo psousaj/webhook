@@ -5,18 +5,21 @@ from celery import shared_task
 from control.functions import check_client_response
 from webhook.utils.get_objects import get_message, get_ticket
 from webhook.utils.logger import Logger
-
 from webhook.utils.tools import (
         get_event_status, 
         message_is_saved, 
         get_current_period, 
         get_contact_number, 
         message_exists_in_digisac, 
-        update_ticket_last_message
+        update_ticket_last_message,
     )
 
 logger = Logger(__name__)
-WEBHOOK_API = os.environ.get("WEBHOOK_API", os.getenv("WEBHOOK_API"))
+
+def load_env(var):
+    return os.environ.get(var, os.getenv(var))
+
+WEBHOOK_API = load_env("WEBHOOK_API_LOCAL") if load_env("IS_LOCALHOST") else load_env("WEBHOOK_API")
 
 
 ##-- Handler to events

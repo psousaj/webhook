@@ -1,4 +1,5 @@
 import os
+import socket
 from httpx import get, Client
 from datetime import datetime as dt
 from dotenv import load_dotenv
