@@ -16,6 +16,7 @@ def load_env(var):
 
 APP='WEBHOOK'
 TIMEOUT=120
+WEBHOOK_API=load_env("WEBHOOK_API_LOCAL") if load_env("IS_LOCALHOST") else load_env("WEBHOOK_API")
 HEROKU_API_KEY = load_env('HEROKU_API_KEY')
 HEROKU_API = load_env('HEROKU_API')
 HEROKU_APP_NAME = 'woz'
@@ -23,7 +24,7 @@ DYNO_NAME = ['worker.1', 'web.1']
 ALLOWED_DYNO_STATES = ['starting', 'up']
 NOT_ALLOWED_DYNO_STATES = ['crashed', 'down', 'idle']
 # CHECK_STATE_INTERVAL = every("2 minutes") & time_of_day.between("08:00", "21:00")
-WEBHOOK_SEND_REPORT_URL = f'{load_env("WEBHOOK_API")}/control/report/send-message'
+WEBHOOK_SEND_REPORT_URL = f'{WEBHOOK_API}/control/report/send-message'
 LOG_STREAM_URL_RETRIEVE = f'/apps/{HEROKU_APP_NAME}/log-sessions'
 
 client_request_header = {
@@ -73,6 +74,7 @@ def refresh_log_stream(client: Client):
 
 # @app.task(CHECK_STATE_INTERVAL)
 def check_memory():
+    print(WEBHOOK_API)
     client = Client(base_url=HEROKU_API, headers=client_request_header, timeout=TIMEOUT)
     log_stream_url = load_env('LOG_STREAM_URL')
     while True:
