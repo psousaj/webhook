@@ -4,6 +4,7 @@ from django.contrib.postgres.fields import ArrayField
 # Create your models here.
 
 class Contact(models.Model):
+    name = models.CharField(max_length=255, null=True)
     contact_id = models.CharField(max_length=255, primary_key=True)
     country_code = models.CharField(max_length=3)
     ddd = models.CharField(max_length=2)
