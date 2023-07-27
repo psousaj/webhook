@@ -37,9 +37,11 @@ def manage(data):
     data = data.get('data')
     event_handler_func, params = event_handlers.get(event, (None, []))
 
-    if (event == 'message.created' and not type(data) == list):
-        if data.get('type', None) == 'ticket':
-            return 
+    try:
+        if (event == 'message.created') and data.get('type', None) == 'ticket':
+                return f"Event: {event} has ticket type, avoiding to prevent message.created error"
+    except AttributeError:
+        return f"Event: {event} has some bug"
 
     if event_handler_func:
         args = [data.get(param) for param in params]
