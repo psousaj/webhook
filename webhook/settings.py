@@ -96,10 +96,10 @@ DATABASES = {
     # To use Neon with Django, you have to create a Project on Neon and specify the project connection settings in your settings.py in the same way as for standalone Postgres.
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'production_webhook',
-        'USER': os.environ.get('DB_USER_TAX', os.getenv('DB_USER_TAX')),
-        'PASSWORD': os.environ.get('DB_PASS_TAX', os.getenv('DB_PASS_TAX')),
-        'HOST': os.environ.get('DB_HOST_TAX', os.getenv('DB_HOST_TAX')),
+        'NAME': 'webhook',
+        'USER': os.environ.get('DB_USER', os.getenv('DB_USER')),
+        'PASSWORD': os.environ.get('DB_PASS', os.getenv('DB_PASS')),
+        'HOST': os.environ.get('DB_HOST', os.getenv('DB_HOST')),
         'PORT': '5432',
     }
 }
