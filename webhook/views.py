@@ -19,7 +19,7 @@ logger = Logger(__name__)
 def webhook_receiver(request: HttpRequest):
     data = json.loads(request.body) if request.body else {}
     try:
-        event.manage(data)
+        event.manage.apply_async(args=[data])
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         filename = inspect.getframeinfo(exc_tb.tb_frame).filename

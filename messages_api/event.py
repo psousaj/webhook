@@ -24,6 +24,7 @@ WEBHOOK_API = load_env("WEBHOOK_API_LOCAL") if IS_LOCALHOST else load_env("WEBHO
 
 
 ##-- Handler to events
+@shared_task(name="handler_task")
 def manage(data):
     event_handlers = {
         'message.created': (handle_message_created, ['id', 'isFromMe']),
@@ -36,13 +37,14 @@ def manage(data):
     data = data.get('data')
     event_handler_func, params = event_handlers.get(event, (None, []))
 
-    if (event == 'message.created' and data.get('type', None) == 'ticket'):
-        return 
+    if (event == 'message.created' and not type(data) == list):
+        if data.get('type', None) == 'ticket':
+            return 
 
     if event_handler_func:
         args = [data.get(param) for param in params]
         
-        return event_handler_func.apply_async(args=args, kwargs={"data":data})
+        event_handler_func.apply_async(args=args, kwargs={"data":data})
 
     return f"Event: {event} handled to the refers function"
 
