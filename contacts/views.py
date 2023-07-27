@@ -1,8 +1,8 @@
 from datetime import datetime as dt
 from django.db import IntegrityError
 
-from django.shortcuts import render
 from rest_framework import viewsets
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from contacts.serializer import CompanyContactSerializer
@@ -13,7 +13,7 @@ from webhook.utils.logger import Logger
 
 logger = Logger(__name__)
 
-
+#Company Contact
 class ContactViewSet(viewsets.ModelViewSet):
     # queryset = Contact.objects.all()
     serializer_class = CompanyContactSerializer
@@ -80,8 +80,6 @@ class ContactViewSet(viewsets.ModelViewSet):
             logger.debug(f"{text}")
             return Response({f"error": "Something Wrong", "message": text}, status=409)
         
-        
-
     def list(self, request, *args, **kwargs):
         try:
             queryset = self.filter_queryset(
@@ -111,3 +109,23 @@ class ContactViewSet(viewsets.ModelViewSet):
             text = f"Update Contact: {contact_id} failed"
             logger.debug(text)
             return Response({'error': 500, 'message': text, 'cause': str(e)}, status=500)
+
+@api_view(['PATCH'])
+def update_contact(request):
+    cnpj = request.query_params.get('cnpj')
+    name = request.query_params.get('name')
+    company_contact = get_company_contact(cnpj=cnpj)
+
+    if not (cnpj or name):
+        return Response("CNPJ & name must be present in update request", status=400)
+
+    try:
+        contact = company_contact.contact
+        contact.name = name
+        contact.save()
+
+        company_contact.save()
+    except Exception as e:
+        return Response({"error": {"code": 500, "message": str(e)}}, status=500)
+    
+    return Response("Contato atualizado")
