@@ -5,6 +5,7 @@ class ContactSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
         fields = [
+            'name',
             'contact_id',
             'country_code',
             'ddd',

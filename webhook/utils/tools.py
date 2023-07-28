@@ -1,7 +1,7 @@
 import os
 import socket
 from httpx import get, Client
-from datetime import datetime as dt
+from datetime import datetime as dt, timedelta
 from dotenv import load_dotenv
 
 from webhook.utils.get_objects import get_ticket, get_message
@@ -83,7 +83,7 @@ def get_contact_number(contact_id: str, only_number=False):
 
 def get_current_period(file_name=False, dtime=False) -> str:
     if file_name:
-        return dt.today().strftime('%B/%Y').capitalize()
+        return (dt.today().replace(day=1) - timedelta(days=1)).strftime('%B/%Y').capitalize()
 
     if dtime:
         return dt.today()

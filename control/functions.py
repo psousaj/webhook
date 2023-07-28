@@ -138,7 +138,7 @@ def get_control_object(contact_id):
 
     return control
 
-def get_message_json(contact_id, message, file_b64, subject="Sem Assunto", competence=None):
+def get_message_json(contact_id, message, file_b64, subject="Sem Assunto"):
     body = {
         "text": "PDF" if file_b64 and not message else message,
         "type": "chat || comment",
@@ -230,12 +230,12 @@ def confirm_message(contact_id, closeTicket=True, timeout=30):
 @shared_task(name='transfer-ticket')
 def transfer_ticket(contact_id, motivo=None):
     contact = get_contact(contact_id=contact_id)
-    protocol = get_control_object(contact_id=contact_id)
+    message_control = get_control_object(contact_id=contact_id)
 
     motivo_str = f"\n\nMotivo: {motivo}" if motivo is not None else ""
     send_message(
         os.environ.get('WOZ_GROUP_ID', os.getenv('WOZ_GROUP_ID')),
-        text=f"O cliente: {contact.company_contact.first().responsible_name}\nSOLICITA ATENDIMENTO{motivo_str}\n\nProtocolo: {protocol.get_protocol_number()}")
+        text=f"O cliente: {contact.name}\nSOLICITA ATENDIMENTO{motivo_str}\n\nProtocolo: {message_control.get_protocol_number()}")
 
     return "Solicitação de atendimento enviada para o grupo WOZ - RELATÓRIOS"
 
