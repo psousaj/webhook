@@ -367,3 +367,39 @@ https://www.instagram.com/p/Cu-UcmTJwXR/
     )
 
     return Response(f"Mensagem enviada com sucesso para: {contact_number}")
+
+
+@api_view(['GET'])
+def check_visualized(request):
+    from control.models import MessageControl
+    # Obter todos os MessageControls com status 0
+    message_control_list = MessageControl.objects.filter(status=0)
+
+    # Listas para conter os objetos filtrados
+    message_controls_visualized = []
+    message_controls_not_visualized = []
+
+    # Dividir os objetos nas duas listas
+    for mc in message_control_list:
+        if mc.last_message_visualized():
+            message_controls_visualized.append(mc)
+        else:
+            message_controls_not_visualized.append(mc)
+
+    # Agora, message_controls_visualized contém os objetos onde last_message_visualized é True
+    # e message_controls_not_visualized contém os objetos onde last_message_visualized é False
+    for mc in message_controls_visualized:
+        contact = get_contact(contact_number=mc.contact)
+        confirm_message.apply_async(
+            kwargs={
+                "contact_id": contact.contact_id,
+                "closeTicket": True,
+                "timeout": 120
+            }
+        )
+    for mc in message_controls_not_visualized:
+        contact = get_contact(contact_number=mc.contact)
+        send_message(
+            contact.contact_id,
+            text="Olá, preciso que visualize ou confirme a mensagem para encerrar este envio."
+        )

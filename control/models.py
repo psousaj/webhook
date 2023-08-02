@@ -15,6 +15,19 @@ class MessageControl(models.Model):
     client_needs_help = models.BooleanField(default=False)
     retries = models.IntegerField(default=1)
 
+    def last_message_visualized(self):
+        ticket_link = self.get_ticket_link()
+        if ticket_link and ticket_link.last_ticket and ticket_link.last_ticket.last_message_id != "FIRST_MESSAGE":
+            last_message = Message.objects.get(
+                message_id=ticket_link.last_ticket.last_message_id)
+            return True if last_message.status == 3 else False
+        elif self.ticket.last_message_id and self.ticket.last_message_id != "FIRST_MESSAGE":
+            last_message = Message.objects.get(
+                message_id=self.ticket.last_message_id)
+            return True if last_message.status == 3 else False
+        else:
+            return False
+
     def is_from_me_last_message(self):
         ticket_link = self.get_ticket_link()
         if ticket_link and ticket_link.last_ticket and ticket_link.last_ticket.last_message_id != "FIRST_MESSAGE":
