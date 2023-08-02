@@ -10,21 +10,6 @@ from webhook.utils.logger import Logger
 load_dotenv()
 
 
-saudacao = f"""Olá, espero que esteja bem.
-Gostaria de informar que seu Documento de Arrecadação Simplificado(DAS) 
-período ({dt.today().strftime('%B/%Y').capitalize()}) está disponível, irei envia-lo em seguida.
-Lembrando que é importante que o pagamento seja realizado
-dentro do prazo estipulado para evitar juros e multa
-"""
-suggest = "Qualquer dúvida ou sugestão entre em contato através do WhatsApp: https://wa.me/5588988412833."
-disclaimer = f"""
-{suggest}
-
-Por favor, preciso que confirme o recebimento desta mensagem. 
-Responda SIM, OK, ou RECEBI por gentileza.
-"""
-
-##-- Logger instances to use
 logger = Logger(__name__)
 
 
@@ -90,6 +75,20 @@ def get_current_period(file_name=False, dtime=False) -> str:
 
     return dt.today().strftime('%m/%y')
 
+
+saudacao = f"""Olá, espero que esteja bem.
+Gostaria de informar que seu Documento de Arrecadação Simplificado(DAS) 
+período ({get_current_period(file_name=True)}) está disponível, irei envia-lo em seguida.
+Lembrando que é importante que o pagamento seja realizado
+dentro do prazo estipulado para evitar juros e multa
+"""
+suggest = "Qualquer dúvida ou sugestão entre em contato através do WhatsApp: https://wa.me/5588988412833."
+disclaimer = f"""
+{suggest}
+
+Por favor, preciso que confirme o recebimento desta mensagem. 
+Responda SIM, OK, ou RECEBI por gentileza.
+"""
 
 
 ##-- Additional functions
