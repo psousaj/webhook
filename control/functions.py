@@ -284,6 +284,10 @@ def init_app(request):
     try:
         cnpj=request.query_params.get('cnpj')
         company_contact = get_company_contact(cnpj=cnpj)
+
+        if not company_contact:
+            raise FileNotFoundError('Company Contact não existe')
+
         pendencies_list = company_contact.get_pendencies()
 
         file = request.data.get('pdf')
