@@ -162,7 +162,6 @@ def create_pendencies_viewset(request: HttpRequest):
         return Response(serializer.data, status=201)
 
     except (IntegrityError, TypeError) as e:
-        error_code, error_msg = e.args
-        text = str(error_msg)
+        text = str(e)
         logger.debug(f"{text}")
-        return Response({f"error {error_code}": "Something Wrong", "message": text}, status=409)
+        return Response({f"error {e}": "Something Wrong", "message": text}, status=409)
