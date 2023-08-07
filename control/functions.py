@@ -483,7 +483,7 @@ def check_visualized(request):
             contact = get_contact(contact_number=mc.contact)
             company_contacts = contact.company_contacts.all()
             companies = [
-                f"{company_contact.cnpj} - {company_contact.company_name}"
+                f"{company_contact.cnpj} - {company_contact.company_name} - Responsável: {company_contact.responsible_name}/ {contact.contact_number}"
                 for company_contact in company_contacts
             ]
 
