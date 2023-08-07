@@ -487,6 +487,14 @@ def check_visualized(request):
                 for company_contact in company_contacts
             ]
 
+            confirm_message.apply_async(
+                kwargs={
+                    "contact_id": contact.contact_id,
+                    "closeTicket": True,
+                    "timeout": 30,
+                }
+            )
+
             mc.status = 1
             mc.save()
 
