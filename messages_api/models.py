@@ -6,8 +6,7 @@ class Ticket(models.Model):
     period = models.DateField()
     is_open = models.BooleanField(default=True)
     contact_id = models.CharField(max_length=255)
-    last_message_id = models.CharField(
-        max_length=500, default="ndsaujfbnujsafbncuj")
+    last_message_id = models.CharField(max_length=500, default="ndsaujfbnujsafbncuj")
 
 
 class Message(models.Model):
@@ -16,9 +15,11 @@ class Message(models.Model):
     contact_number = models.CharField(max_length=255, null=False)
     period = models.DateField()
     status = models.IntegerField(
-        choices=((0, 'Criada'), (1, 'Enviada'), (2, 'Recebida'), (3, 'Visualizada')))
+        choices=((0, "Criada"), (1, "Enviada"), (2, "Recebida"), (3, "Visualizada"))
+    )
     ticket = models.ForeignKey(
-        Ticket, on_delete=models.CASCADE, related_name="messages")
+        Ticket, on_delete=models.CASCADE, related_name="messages"
+    )
     message_type = models.CharField(max_length=255)
     is_from_me = models.BooleanField(default=False)
     text = models.CharField(max_length=500)
@@ -28,4 +29,4 @@ class Message(models.Model):
         return f"{self.contact_number} - {self.period} - {self.status}"
 
     class Meta:
-        unique_together = (('contact_id', 'message_id', 'status'),)
+        unique_together = (("contact_id", "message_id", "status"),)

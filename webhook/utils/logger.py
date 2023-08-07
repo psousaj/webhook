@@ -2,7 +2,6 @@ import logging
 
 
 class Logger:
-
     def __init__(self, name) -> None:
         # Configuração do logger
         self.logger = logging.getLogger(name)
@@ -18,7 +17,9 @@ class Logger:
 
         # Definindo o formato das mensagens de log
         formatter = logging.Formatter(
-            '%(asctime)s - %(name)s -%(levelname)s- %(message)s', datefmt='%d/%m/%Y|%H:%M:%S')
+            "%(asctime)s - %(name)s -%(levelname)s- %(message)s",
+            datefmt="%d/%m/%Y|%H:%M:%S",
+        )
         self.console_handler.setFormatter(formatter)
         # self.file_handler.setFormatter(formatter)
 
@@ -40,4 +41,3 @@ class Logger:
 
     def critical(self, msg, *args, **kwargs):
         self.logger.critical(msg, *args, **kwargs)
-

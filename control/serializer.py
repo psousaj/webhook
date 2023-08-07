@@ -8,7 +8,7 @@ class TicketLinkSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TicketLink
-        fields = '__all__'
+        fields = "__all__"
 
 
 class ControlMessageSerializer(serializers.ModelSerializer):
@@ -17,4 +17,4 @@ class ControlMessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MessageControl
-        fields = '__all__'
+        fields = "__all__"

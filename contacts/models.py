@@ -3,6 +3,7 @@ from django.contrib.postgres.fields import ArrayField
 
 # Create your models here.
 
+
 class Contact(models.Model):
     name = models.CharField(max_length=255, null=True)
     contact_id = models.CharField(max_length=255, primary_key=True)
@@ -14,7 +15,9 @@ class Contact(models.Model):
         related_name="digisac_contacts",
         blank=True,
     )
-    establishments = ArrayField(models.IntegerField(), null=True, blank=True) #Works only with PostGresSQL
+    establishments = ArrayField(
+        models.IntegerField(), null=True, blank=True
+    )  # Works only with PostGresSQL
 
     def __str__(self) -> str:
         return f"{self.contact_number} - {self.company_contact.first()}"
@@ -30,7 +33,8 @@ class Contact(models.Model):
         self.save()
 
     class Meta:
-        unique_together = (('contact_number', 'contact_id'),)
+        unique_together = (("contact_number", "contact_id"),)
+
 
 class CompanyContact(models.Model):
     cnpj = models.CharField(max_length=14, unique=True)
@@ -44,10 +48,10 @@ class CompanyContact(models.Model):
         related_name="company_contact",
         null=True,
         blank=False,
-    )  
+    )
 
     class Meta:
-        unique_together = (('cnpj', 'establishment_id'),)
+        unique_together = (("cnpj", "establishment_id"),)
 
     def __str__(self) -> str:
         return f"{self.company_name} - {self.cnpj}: {self.responsible_name.upper()}"
@@ -71,14 +75,17 @@ class CompanyContact(models.Model):
         if self.contact:
             self.contact.save()
 
+
 class Pendencies(models.Model):
-    contact = models.ForeignKey(CompanyContact, on_delete=models.CASCADE, related_name='pendencies')
+    contact = models.ForeignKey(
+        CompanyContact, on_delete=models.CASCADE, related_name="pendencies"
+    )
     cnpj = models.CharField(max_length=255)
     period = models.DateField()
     pdf = models.TextField()
 
     class Meta:
-        unique_together = ('cnpj', 'period')
+        unique_together = ("cnpj", "period")
 
     def __str__(self):
         return f"{self.cnpj} - {self.period}"

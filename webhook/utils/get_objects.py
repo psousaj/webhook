@@ -9,6 +9,7 @@ from messages_api.models import Message, Ticket
 max_retries = 5
 att_tax = 0.1
 
+
 def get_company_contact(**kwargs):
     retries = 0
     while retries < max_retries:
@@ -19,6 +20,7 @@ def get_company_contact(**kwargs):
             time.sleep(att_tax)
             retries += 1
     return None
+
 
 def get_contact(**kwargs):
     retries = 0
@@ -31,6 +33,7 @@ def get_contact(**kwargs):
             retries += 1
     return None
 
+
 def get_pendencies(**kwargs):
     retries = 0
     while retries < max_retries:
@@ -41,6 +44,7 @@ def get_pendencies(**kwargs):
             time.sleep(0.5)
             retries += 1
     return None
+
 
 def get_message_control(**kwargs):
     retries = 0
@@ -53,6 +57,7 @@ def get_message_control(**kwargs):
             retries += 1
     return None
 
+
 def get_ticket_link(**kwargs):
     retries = 0
     while retries < max_retries:
@@ -63,6 +68,7 @@ def get_ticket_link(**kwargs):
             time.sleep(att_tax)
             retries += 1
     return None
+
 
 def get_message(**kwargs):
     retries = 0
@@ -75,6 +81,7 @@ def get_message(**kwargs):
             retries += 1
     return None
 
+
 def get_ticket(**kwargs):
     retries = 0
     while retries < max_retries:
@@ -85,6 +92,7 @@ def get_ticket(**kwargs):
             time.sleep(att_tax)
             retries += 1
     return None
+
 
 def get_das_grouping(**kwargs):
     retries = 0

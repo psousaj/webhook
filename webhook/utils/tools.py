@@ -20,17 +20,19 @@ def any_digisac_request(url, body=None, method=get, json=True):
         "Content-Type": "application/json",
     }
 
-    with Client(base_url=os.environ.get('API_URL', os.getenv('API_URL')), headers=header) as client:
-        if method == 'get':
+    with Client(
+        base_url=os.environ.get("API_URL", os.getenv("API_URL")), headers=header
+    ) as client:
+        if method == "get":
             get_response: get = client.get(url)
             return get_response.json() if json else get_response
-        if method == 'post':
+        if method == "post":
             response = client.post(url, json=body)
             if response.status_code == 200:
                 return response.json() if json else response
             else:
-                raise ValueError(
-                    f'Something wrong - {response} - {response.json()}')
+                raise ValueError(f"Something wrong - {response} - {response.json()}")
+
 
 def get_chat_protocol(ticketId):
     try:
@@ -39,23 +41,20 @@ def get_chat_protocol(ticketId):
             "Content-Type": "application/json",
         }
 
-        with Client(base_url=os.environ.get('API_URL', os.getenv('API_URL'))) as client:
-            response = client.get(
-                f"/tickets/{ticketId}",
-                headers=header
-            )
+        with Client(base_url=os.environ.get("API_URL", os.getenv("API_URL"))) as client:
+            response = client.get(f"/tickets/{ticketId}", headers=header)
 
             if response.status_code == 200:
                 data = response.json()
-                return data['protocol']
+                return data["protocol"]
     except Exception as e:
         logger.error(f"Exception occurred: \n{e}")
-
 
 
 ##--Contact utils
 def get_contact_number(contact_id: str, only_number=False):
     from webhook.utils.get_objects import get_contact
+
     contact = get_contact(contact_id=contact_id)
 
     if contact:
@@ -66,14 +65,19 @@ def get_contact_number(contact_id: str, only_number=False):
 
     return None
 
+
 def get_current_period(file_name=False, dtime=False) -> str:
     if file_name:
-        return (dt.today().replace(day=1) - timedelta(days=1)).strftime('%B/%Y').capitalize()
+        return (
+            (dt.today().replace(day=1) - timedelta(days=1))
+            .strftime("%B/%Y")
+            .capitalize()
+        )
 
     if dtime:
         return dt.today()
 
-    return dt.today().strftime('%m/%y')
+    return dt.today().strftime("%m/%y")
 
 
 saudacao = f"""Olá, espero que esteja bem.
@@ -93,23 +97,24 @@ Responda SIM, OK, ou RECEBI por gentileza.
 
 ##-- Additional functions
 def get_event_status(event, message_id: str = None, ticket_id: str = None):
-    if event == 'ticket':
+    if event == "ticket":
         ticket = get_ticket(ticket_id=ticket_id)
         return ticket.is_open if ticket else False
 
-    if event == 'message':
+    if event == "message":
         message = get_message(message_id=message_id)
         return message.status if message else 0
 
-def update_ticket_last_message(ticket_id:str):
-    response = any_digisac_request(f'/tickets/{ticket_id}', method='get', json=False)
+
+def update_ticket_last_message(ticket_id: str):
+    response = any_digisac_request(f"/tickets/{ticket_id}", method="get", json=False)
 
     if response.status_code == 200:
         try:
             digisac_ticket = response.json()
-            last_message_id = digisac_ticket.get('lastMessageId')
-            is_open = digisac_ticket.get('isOpen')
-            
+            last_message_id = digisac_ticket.get("lastMessageId")
+            is_open = digisac_ticket.get("isOpen")
+
             ticket = get_ticket(ticket_id=ticket_id)
             ticket.last_message_id = last_message_id
             ticket.is_open = is_open
@@ -117,17 +122,19 @@ def update_ticket_last_message(ticket_id:str):
 
             return "Show Papai. Atualizado!!"
         except Exception as e:
-            raise ValueError(
-                f"Algo de errado não está certo - {ticket_id}/{str(e)}")
+            raise ValueError(f"Algo de errado não está certo - {ticket_id}/{str(e)}")
 
     return "Nada foi feito! Ticket provavelmente ainda não foi criado"
 
-def message_exists_in_digisac(message_id):
-    message = any_digisac_request(f'/messages/{message_id}', method='get', json=True)
 
-    if message['sent']:
+def message_exists_in_digisac(message_id):
+    message = any_digisac_request(f"/messages/{message_id}", method="get", json=True)
+
+    if message["sent"]:
         return True
-    else: return False
+    else:
+        return False
+
 
 def message_is_saved(message_id) -> bool:
     # Esse método retorna None se não encontrar o objeto, logo num if qualquer resposta
@@ -136,9 +143,12 @@ def message_is_saved(message_id) -> bool:
 
     return True if message else False
 
+
 def group_das_to_send(contact, company_contact, period):
     from control.models import DASFileGrouping
 
-    grouping, created = DASFileGrouping.objects.get_or_create(contact=contact, period=period)
+    grouping, created = DASFileGrouping.objects.get_or_create(
+        contact=contact, period=period
+    )
 
     grouping.append_new_companie(company_contact)

@@ -7,7 +7,7 @@ from messages_api.models import Message, Ticket
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
-        fields = '__all__'
+        fields = "__all__"
         # validators = [
         #     UniqueTogetherValidator(
         #         queryset=Message.objects.all(),
@@ -19,13 +19,13 @@ class MessageSerializer(serializers.ModelSerializer):
 class MessageSerializerByTicket(serializers.ModelSerializer):
     class Meta:
         model = Message
-        fields = ['message_id', 'contact_id', 'status', 'is_from_me', 'text']
+        fields = ["message_id", "contact_id", "status", "is_from_me", "text"]
 
 
 class TicketStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket
-        fields = ['is_open']
+        fields = ["is_open"]
 
 
 class TicketSerializer(serializers.ModelSerializer):
@@ -33,11 +33,11 @@ class TicketSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        messages = representation.get('messages', [])
+        messages = representation.get("messages", [])
         messages_count = len(messages)
-        representation['messages'] = messages_count
+        representation["messages"] = messages_count
         return representation
 
     class Meta:
         model = Ticket
-        fields = '__all__'
+        fields = "__all__"

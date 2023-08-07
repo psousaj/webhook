@@ -21,13 +21,13 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from webhook.views import webhook_receiver, webhook_avaliation
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include('example.urls')),
-    path('webhook', webhook_receiver, name='webhook'),
-    path('webhook/avaliations', webhook_avaliation, name='webhook_avaliation'),
-    path('webhook/messages', include('messages_api.urls')),
-    path('webhook/contacts', include('contacts.urls')),
-    path('webhook/control', include('control.urls')),
+    path("admin/", admin.site.urls),
+    path("", include("example.urls")),
+    path("webhook", webhook_receiver, name="webhook"),
+    path("webhook/avaliations", webhook_avaliation, name="webhook_avaliation"),
+    path("webhook/messages", include("messages_api.urls")),
+    path("webhook/contacts", include("contacts.urls")),
+    path("webhook/control", include("control.urls")),
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 # Adicione esta linha para servir arquivos estáticos durante o desenvolvimento
