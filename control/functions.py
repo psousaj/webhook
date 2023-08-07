@@ -490,21 +490,19 @@ def check_visualized(request):
             mc.status = 1
             mc.save()
 
-            companies_not_confirmed.append("\n".join(companies))
+            companies_not_confirmed += companies  # Apenas adicione as empresas à lista
 
         # Início da mensagem
-        report_message = "MEI's SEM CONFIRMAÇÃO DE RECEBIMENTO DAS:\n"
-        # Junta cada sublista em uma string
-        report_message += "\n" + ("--" * 10 + "\n").join(companies_not_confirmed)
-        # Adiciona um separador no início também
-        report_message = "--" * 10 + "\n" + report_message
+        report_message = "MEI's SEM CONFIRMAÇÃO DE RECEBIMENTO DAS:\n\n"  # Dois espaços em branco após a frase inicial
+        # Junta cada sublista em uma string, adicionando os separadores
+        report_message += ",\n".join(companies_not_confirmed)
 
         send_message(WOZ_GROUP_ID, text=report_message)
 
         return Response(
             {
                 "status": f"{len(companies_not_confirmed)} empresas sem confirmação de recebimento enviadas para o grupo WOZ RELATÓRIOS",
-                "report": report_message,
+                "report": companies_not_confirmed,
             }
         )
 
