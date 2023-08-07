@@ -409,7 +409,7 @@ def init_app(request):
 
 @api_view(["GET"])
 def send_groupinf_of_das(request):
-    # Trás apenas os registros que
+    # Trás apenas os registros que ainda não foram enviados
     grouping_list = DASFileGrouping.objects.filter(was_sent=False)
 
     if grouping_list:
@@ -436,7 +436,12 @@ def send_groupinf_of_das(request):
             }
         )
 
-    return Response({"info": "Nenhum agrupamento de DAS esse mês"}, status=500)
+    return Response(
+        {
+            "info": "Nenhum agrupamento de DAS esse mês ou todos que existem já foram enviados"
+        },
+        status=500,
+    )
 
 
 @api_view(["POST"])
@@ -496,6 +501,13 @@ def check_visualized(request):
 
         send_message(WOZ_GROUP_ID, text=report_message)
 
+        return Response(
+            {
+                "status": f"{len(companies_not_confirmed)} empresas sem confirmação de recebimento enviadas para o grupo WOZ RELATÓRIOS",
+                "report": report_message,
+            }
+        )
+
     # Listas para conter os objetos filtrados
     message_controls_visualized = []
     message_controls_not_visualized = []
@@ -527,3 +539,13 @@ def check_visualized(request):
             contact.contact_id,
             text="Olá, preciso que visualize ou confirme a mensagem para encerrar este envio.",
         )
+
+    return Response(
+        {
+            "message": f"{len(message_control_list)} sem confirmação de recebimento",
+            "status": {
+                "visualized": len(message_controls_visualized),
+                "not_visualized": len(message_controls_not_visualized),
+            },
+        }
+    )
