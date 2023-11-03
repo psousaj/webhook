@@ -5,21 +5,23 @@ from django.shortcuts import get_object_or_404
 from contacts.models import CompanyContact, Contact, Pendencies
 from control.models import MessageControl, TicketLink, DASFileGrouping
 from messages_api.models import Message, Ticket
+import httpx
 
 max_retries = 5
 att_tax = 0.1
 
 
 def get_company_contact(**kwargs):
-    retries = 0
-    while retries < max_retries:
-        try:
-            contact = get_object_or_404(CompanyContact, **kwargs)
-            return contact
-        except Http404:
-            time.sleep(att_tax)
-            retries += 1
-    return None
+    httpx.get()
+    # retries = 0
+    # while retries < max_retries:
+    #     try:
+    #         contact = get_object_or_404(CompanyContact, **kwargs)
+    #         return contact
+    #     except Http404:
+    #         time.sleep(att_tax)
+    #         retries += 1
+    # return None
 
 
 def get_contact(**kwargs):
