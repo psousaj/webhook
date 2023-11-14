@@ -4,13 +4,14 @@ import os
 import random
 import sys
 import traceback
+
 from django.http.request import HttpRequest
-from rest_framework.response import Response
 from django.http.response import JsonResponse
 from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
-from webhook.utils.logger import Logger
 from messages_api import event
+from webhook.utils.logger import Logger
 
 logger = Logger(__name__)
 
@@ -19,7 +20,8 @@ logger = Logger(__name__)
 def webhook_receiver(request: HttpRequest):
     data = json.loads(request.body) if request.body else {}
     try:
-        event.manage.apply_async(args=[data])
+        # event.manage.apply_async(args=[data])
+        event.manage(data)
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         filename = inspect.getframeinfo(exc_tb.tb_frame).filename
